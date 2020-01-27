@@ -4,11 +4,13 @@ import { Title } from '@md-views'
 import { CodeBlock } from '@md-components/code-block'
 // libs
 import * as E from 'fp-ts/lib/Either'
+import * as O from 'fp-ts/lib/Option'
+import * as I from 'fp-ts/lib/Identity'
 import { pipe } from 'fp-ts/lib/pipeable'
-import { monoidSum } from 'fp-ts/lib/Monoid'
 import { showString } from 'fp-ts/lib/Show'
 import { semigroupSum } from 'fp-ts/lib/Semigroup'
 import { eqNumber, eqString } from 'fp-ts/lib/Eq'
+import { monoidSum, monoidString } from 'fp-ts/lib/Monoid'
 
 export const EitherContainer: React.FC = () => {
   // common types
@@ -345,6 +347,479 @@ export const EitherContainer: React.FC = () => {
   )}
   `
 
+  // getOrElse
+  const getOrElseTx = `
+  import { pipe } from 'fp-ts/lib/pipeable'
+
+  function getOrElse<E, A>(onLeft: (e: E) => A): (ma: Either<E, A>) => A {
+    return ma => (isLeft(ma) ? onLeft(ma.left) : ma.right)
+  }
+  
+  pipe(
+    right(12),
+    getOrElse(() => 17)
+  ) // ${pipe(
+    E.right(12),
+    E.getOrElse(() => 17),
+    JSON.stringify
+  )}
+  
+  pipe(
+    left('a'),
+    getOrElse(() => 17)
+  ) // ${pipe(
+    E.left('a'),
+    E.getOrElse(() => 17),
+    JSON.stringify
+  )}
+  
+  pipe(
+    left('a'),
+    getOrElse((l: string) => l.length + 1)
+  ) // ${pipe(
+    E.left('a'),
+    E.getOrElse((l: string) => l.length + 1),
+    JSON.stringify
+  )}
+  `
+
+  // elem
+  const elemTx = `
+  import { eqNumber } from 'fp-ts/lib/Eq'
+
+  function elem<A>(E: Eq<A>): <E>(a: A, ma: Either<E, A>) => boolean {
+    return (a, ma) => (isLeft(ma) ? false : E.equals(a, ma.right))
+  }
+  
+  elem(eqNumber)(2, left('a')) // ${E.elem(eqNumber)(2, E.left('a'))}
+  elem(eqNumber)(2, right(2)) // ${E.elem(eqNumber)(2, E.right(2))}
+  elem(eqNumber)(1, right(2)) // ${E.elem(eqNumber)(1, E.right(2))}
+  `
+
+  // exists
+  const greaterThan2 = E.exists((n: number) => n > 2)
+
+  const existsTx = `
+  // Returns \`false\` if \`Left\` or returns the result of the
+  // application of the given predicate to the \`Right\` value.
+
+  function exists<A>(predicate: Predicate<A>): <E>(ma: Either<E, A>) => boolean {
+    return ma => (isLeft(ma) ? false : predicate(ma.right))
+  }
+  
+  const greaterThan2 = exists((n: number) => n > 2)
+ 
+  greaterThan2(left('a')) // ${greaterThan2(E.left('a'))}
+  greaterThan2(right(1)) // ${greaterThan2(E.right(1))}
+  greaterThan2(right(3)) // ${greaterThan2(E.right(3))}
+  `
+
+  // parseJSON
+  const parseJSONTx = `
+  // Converts a JavaScript Object Notation (JSON) string into an object.
+
+  function parseJSON<E>(s: string, onError: (reason: unknown) => E): Either<E, unknown> {
+    return tryCatch(() => JSON.parse(s), onError)
+  }
+  
+  
+  parseJSON('{"a":1}', toError) // ${JSON.stringify(E.parseJSON('{"a":1}', E.toError))}
+  parseJSON('{"a":}', toError) // ${JSON.stringify(E.parseJSON('{"a":}', E.toError))}
+  `
+
+  // stringifyJSON
+  const circular: any = { ref: null }
+  circular.ref = circular
+
+  const stringifyJSONTx = `
+  // Converts a JavaScript value to a JavaScript Object Notation (JSON) string.
+
+  import { pipe } from 'fp-ts/lib/pipeable'
+
+  function stringifyJSON<E>(u: unknown, onError: (reason: unknown) => E): Either<E, string> {
+    return tryCatch(() => JSON.stringify(u), onError)
+  }
+  
+  const circular: any = { ref: null }
+  circular.ref = circular
+  
+  parseJSON('{"a":1}', toError) // ${JSON.stringify(E.stringifyJSON({ a: 1 }, E.toError))} 
+  
+  pipe(
+    stringifyJSON(circular, toError),
+    mapLeft(e => e.message.includes('Converting circular structure to JSON'))
+  ) // ${pipe(
+    E.stringifyJSON(circular, E.toError),
+    E.mapLeft(e => e.message.includes('Converting circular structure to JSON')),
+    JSON.stringify
+  )}
+  `
+
+  // getWitherable
+  const witherable = E.getWitherable(monoidString)
+  const wiltIdentity = witherable.wilt(I.identity)
+  const witherIdentity = witherable.wither(I.identity)
+
+  const witherableP = (n: number) => n > 2
+  const witherableF = (n: number) => (witherableP(n) ? E.right(n + 1) : E.left(n - 1))
+  const witherableFM = (n: number) => (witherableP(n) ? O.some(n + 1) : O.none)
+  const witherableFI = (n: number) => I.identity.of(witherableP(n) ? O.some(n + 1) : O.none)
+  const witherableFWI = (n: number) => I.identity.of(witherableP(n) ? E.right(n + 1) : E.left(n - 1))
+
+  const getWitherableTx = `
+  // Builds \`Witherable\` instance for \`Either\` given \`Monoid\` for the left side
+
+  import { monoidString } from 'fp-ts/lib/Monoid'
+
+  function getWitherable<E>(M: Monoid<E>): Witherable2C<URI, E> {
+    const empty = left(M.empty)
+  
+    const compact = <A>(ma: Either<E, Option<A>>): Either<E, A> => {
+      return isLeft(ma) ? ma : ma.right._tag === 'None' ? left(M.empty) : right(ma.right.value)
+    }
+  
+    const separate = <A, B>(ma: Either<E, Either<A, B>>): Separated<Either<E, A>, Either<E, B>> => {
+      return isLeft(ma)
+        ? { left: ma, right: ma }
+        : isLeft(ma.right)
+        ? { left: right(ma.right.left), right: empty }
+        : { left: empty, right: right(ma.right.right) }
+    }
+  
+    const partitionMap = <A, B, C>(
+      ma: Either<E, A>,
+      f: (a: A) => Either<B, C>
+    ): Separated<Either<E, B>, Either<E, C>> => {
+      if (isLeft(ma)) {
+        return { left: ma, right: ma }
+      }
+      const e = f(ma.right)
+      return isLeft(e) ? { left: right(e.left), right: empty } : { left: empty, right: right(e.right) }
+    }
+  
+    const partition = <A>(ma: Either<E, A>, p: Predicate<A>): Separated<Either<E, A>, Either<E, A>> => {
+      return isLeft(ma)
+        ? { left: ma, right: ma }
+        : p(ma.right)
+        ? { left: empty, right: right(ma.right) }
+        : { left: right(ma.right), right: empty }
+    }
+  
+    const filterMap = <A, B>(ma: Either<E, A>, f: (a: A) => Option<B>): Either<E, B> => {
+      if (isLeft(ma)) {
+        return ma
+      }
+      const ob = f(ma.right)
+      return ob._tag === 'None' ? left(M.empty) : right(ob.value)
+    }
+  
+    const filter = <A>(ma: Either<E, A>, predicate: Predicate<A>): Either<E, A> =>
+      isLeft(ma) ? ma : predicate(ma.right) ? ma : left(M.empty)
+  
+    const wither = <F>(
+      F: Applicative<F>
+    ): (<A, B>(ma: Either<E, A>, f: (a: A) => HKT<F, Option<B>>) => HKT<F, Either<E, B>>) => {
+      const traverseF = either.traverse(F)
+      return (ma, f) => F.map(traverseF(ma, f), compact)
+    }
+  
+    const wilt = <F>(
+      F: Applicative<F>
+    ): (<A, B, C>(
+      ma: Either<E, A>,
+      f: (a: A) => HKT<F, Either<B, C>>
+    ) => HKT<F, Separated<Either<E, B>, Either<E, C>>>) => {
+      const traverseF = either.traverse(F)
+      return (ma, f) => F.map(traverseF(ma, f), separate)
+    }
+  
+    return {
+      URI,
+      _E: undefined as any,
+      map: either.map,
+      compact,
+      separate,
+      filter,
+      filterMap,
+      partition,
+      partitionMap,
+      traverse: either.traverse,
+      sequence: either.sequence,
+      reduce: either.reduce,
+      foldMap: either.foldMap,
+      reduceRight: either.reduceRight,
+      wither,
+      wilt
+    }
+  }
+  
+  /* example */
+  
+  const witherable = getWitherable(monoidString)
+
+  /* example: .compact */
+  
+  witherable.compact(left('1'))
+  // ${JSON.stringify(witherable.compact(E.left('1')))}
+  
+  witherable.compact(right(none))
+  // ${JSON.stringify(witherable.compact(E.right(O.none)))}
+  
+  witherable.compact(right(some(123)))
+  // ${JSON.stringify(witherable.compact(E.right(O.some(123))))}
+
+  /* example: .separate */
+  
+  witherable.separate(left('123'))
+  // ${JSON.stringify(witherable.separate(E.left('123')))}
+  
+  witherable.separate(right(left('123')))
+  // ${JSON.stringify(witherable.separate(E.right(E.left('123'))))} 
+  
+  witherable.separate(right(right('123')))
+  // ${JSON.stringify(witherable.separate(E.right(E.right('123'))))}
+  
+  /* example: .partition */
+  
+  const p = (n: number) => n > 2
+
+  witherable.partition(left('123'), p)
+  // ${JSON.stringify(witherable.partition(E.left('123'), witherableP))}
+  
+  witherable.partition(right(1), p)
+  // ${JSON.stringify(witherable.partition(E.right(1), witherableP))}
+  
+  witherable.partition(right(3), p)
+  // ${JSON.stringify(witherable.partition(E.right(3), witherableP))}
+
+  /* example: .partitionMap */
+  
+  const p = (n: number) => n > 2
+  const f = (n: number) => (p(n) ? right(n + 1) : left(n - 1))
+  
+  witherable.partitionMap(left('123'), f)
+  // ${JSON.stringify(witherable.partitionMap(E.left('123'), witherableF))}
+  
+  witherable.partitionMap(right(1), f)
+  // ${JSON.stringify(witherable.partitionMap(E.right(1), witherableF))}
+
+  witherable.partitionMap(_.right(3), f)
+  // ${JSON.stringify(witherable.partitionMap(E.right(3), witherableF))}
+      
+  /* example: .filter */
+  const p = (n: number) => n > 2
+  
+  witherable.filter(left('123'), p)
+  // ${JSON.stringify(witherable.filter(E.left('123'), witherableP))}
+  
+  witherable.filter(right(1), p)
+  // ${JSON.stringify(witherable.filter(E.right(1), witherableP))}
+
+  witherable.filter(right(3), p)
+  // ${JSON.stringify(witherable.filter(E.right(3), witherableP))}
+
+  /* example: .filterMap */
+  
+  const p = (n: number) => n > 2
+  const f = (n: number) => (p(n) ? some(n + 1) : none)
+  
+  W.filterMap(left('123'), f)
+  // ${JSON.stringify(witherable.filterMap(E.left('123'), witherableFM))}
+  
+  W.filterMap(right(1), f)
+  // ${JSON.stringify(witherable.filterMap(E.right(1), witherableFM))}
+
+  W.filterMap(right(3), f)
+  // ${JSON.stringify(witherable.filterMap(E.right(3), witherableFM))}
+
+  /* example: .wither */
+
+  import * as I from 'fp-ts/lib/Identity'
+
+  const p = (n: number) => n > 2
+  const f = (n: number) => I.identity.of(p(n) ? some(n + 1) : none)
+
+  const witherIdentity = W.wither(I.identity)
+  
+  witherIdentity(left('foo'), f)
+  // ${JSON.stringify(witherIdentity(E.left('foo'), witherableFI))}
+  
+  witherIdentity(right(1), f)
+  // ${JSON.stringify(witherIdentity(E.right(1), witherableFI))}
+  
+  witherIdentity(right(3), f)
+  // ${JSON.stringify(witherIdentity(E.right(3), witherableFI))}
+
+  /* example: .wilt */
+
+  import * as I from 'fp-ts/lib/Identity'
+
+  const p = (n: number) => n > 2
+  const f = (n: number) => I.identity.of(p(n) ? _.right(n + 1) : _.left(n - 1))
+  
+  const wiltIdentity = W.wilt(I.identity)
+  
+  wiltIdentity(left('foo'), f)
+  // ${JSON.stringify(wiltIdentity(E.left('foo'), witherableFWI))}
+  
+  wiltIdentity(right(1), f)
+  // ${JSON.stringify(wiltIdentity(E.right(1), witherableFWI))}
+
+  wiltIdentity(right(3), f)
+  // ${JSON.stringify(wiltIdentity(E.right(3), witherableFWI))}
+  `
+
+  // getValidation
+  const validation = E.getValidation(monoidString)
+  const validationF = (s: string) => E.right(s.length)
+  const validationDouble = (n: number) => n * 2
+
+  const getValidationTx = `
+  // See [Getting started with fp-ts: Either vs Validation]
+  // https://gcanti.github.io/fp-ts/getting-started/either-vs-validation.html
+
+  function getValidation<E>(S: Semigroup<E>): Monad2C<URI, E> & Alt2C<URI, E> {
+    return {
+      URI,
+      _E: undefined as any,
+      map: either.map,
+      of: either.of,
+      ap: (mab, ma) =>
+        isLeft(mab)
+          ? isLeft(ma)
+            ? left(S.concat(mab.left, ma.left))
+            : mab
+          : isLeft(ma)
+          ? ma
+          : right(mab.right(ma.right)),
+      chain: either.chain,
+      alt: (fx, f) => {
+        if (isRight(fx)) {
+          return fx
+        }
+        const fy = f()
+        return isLeft(fy) ? left(S.concat(fx.left, fy.left)) : fy
+      }
+    }
+  }
+  
+  /* examples */
+  
+  const validation = getValidation(monoidString)
+  
+  const f = (s: string) => right(s.length)
+  const double = (n: number) => n * 2
+  
+  /* examples: .chain */
+
+  validation.chain(right('abc'), f)
+  // ${JSON.stringify(validation.chain(E.right('abc'), validationF))}
+  
+  validation.chain(left('a'), f)
+  // ${JSON.stringify(validation.chain(E.left('a'), validationF))}
+  
+  validation.chain(left('a'), () => left('b'))
+  // ${JSON.stringify(validation.chain(E.left('a'), () => E.left('b')))}
+  
+  /* examples: .of */
+
+  validation.of(1)
+  // ${JSON.stringify(validation.of(1))}
+  
+  /* examples: .ap */
+
+  validation.ap(right(double), right(1))
+  // ${JSON.stringify(validation.ap(E.right(validationDouble), E.right(1)))}
+  
+  validation.ap(right(double), left('foo'))
+  // ${JSON.stringify(validation.ap(E.right(validationDouble), E.left('foo')))}
+  
+  validation.ap(left<string, (n: number) => number>('foo'), right(1))
+  // ${JSON.stringify(validation.ap(E.left<string, (n: number) => number>('foo'), E.right(1)))}
+
+  validation.ap(left('foo'), left('bar'))
+  // ${JSON.stringify(validation.ap(E.left('foo'), E.right('bar')))}
+  
+  /* examples: .alt */
+
+  validation.alt(left('a'), () => right(1))
+  // ${JSON.stringify(validation.alt(E.left('a'), () => E.right(1)))}
+  
+  validation.alt(right(1), () => left('a'))
+  // ${JSON.stringify(validation.alt(E.right(1), () => E.left('a')))}
+  
+  validation.alt(left('a'), () => left('b'))
+  // ${JSON.stringify(validation.alt(E.left('a'), () => E.left('b')))}
+  `
+
+  // getValidationSemigroup
+  const validationSemigroup = E.getValidationMonoid(monoidString, monoidSum)
+
+  const getValidationSemigroupTx = `
+  import { monoidSum, monoidString } from 'fp-ts/lib/Monoid'
+
+  function getValidationSemigroup<E, A>(SE: Semigroup<E>, SA: Semigroup<A>): Semigroup<Either<E, A>> {
+    return {
+      concat: (fx, fy) =>
+        isLeft(fx)
+          ? isLeft(fy)
+            ? left(SE.concat(fx.left, fy.left))
+            : fx
+          : isLeft(fy)
+          ? fy
+          : right(SA.concat(fx.right, fy.right))
+    }
+  }
+  
+  const validationSemigroup = getValidationSemigroup(monoidString, monoidSum)
+
+  validationMonoid.concat(right(1), right(2))
+  // ${JSON.stringify(validationSemigroup.concat(E.right(1), E.right(2)))}
+  
+  validationMonoid.concat(right(1), left('foo'))
+  // ${JSON.stringify(validationSemigroup.concat(E.right(1), E.left('foo')))}
+
+  validationMonoid.concat(left('foo'), right(1))
+  // ${JSON.stringify(validationSemigroup.concat(E.left('foo'), E.right(2)))}
+
+  validationMonoid.concat(left('foo'), left('bar'))
+  // ${JSON.stringify(validationSemigroup.concat(E.left('foo'), E.left('bar')))}
+  `
+
+  // getValidationMonoid
+  const validationMonoid = E.getValidationMonoid(monoidString, monoidSum)
+
+  const getValidationMonoidTx = `
+  import { monoidSum, monoidString } from 'fp-ts/lib/Monoid'
+
+  function getValidationMonoid<E, A>(SE: Semigroup<E>, SA: Monoid<A>): Monoid<Either<E, A>> {
+    return {
+      concat: getValidationSemigroup(SE, SA).concat,
+      empty: right(SA.empty)
+    }
+  }
+  
+  const validationMonoid = getValidationMonoid(monoidString, monoidSum)
+  
+  validationMonoid.concat(right(1), right(2))
+  // ${JSON.stringify(validationMonoid.concat(E.right(1), E.right(2)))}
+  
+  validationMonoid.concat(right(1), left('foo'))
+  // ${JSON.stringify(validationMonoid.concat(E.right(1), E.left('foo')))}
+
+  validationMonoid.concat(left('foo'), right(1))
+  // ${JSON.stringify(validationMonoid.concat(E.left('foo'), E.right(2)))}
+
+  validationMonoid.concat(left('foo'), left('bar'))
+  // ${JSON.stringify(validationMonoid.concat(E.left('foo'), E.left('bar')))}
+
+  validationMonoid.concat(right(1), validationMonoid.empty)
+  // ${JSON.stringify(validationMonoid.concat(E.right(1), validationMonoid.empty))}
+
+  validationMonoid.concat(validationMonoid.empty, right(1))
+  // ${JSON.stringify(validationMonoid.concat(validationMonoid.empty, E.right(1)))}
+  `
+
   return (
     <>
       <Title>FP-TS (Either)</Title>
@@ -364,6 +839,16 @@ export const EitherContainer: React.FC = () => {
       <CodeBlock label='getApplyMonoid' codeTx={getApplyMonoidTx} />
       <CodeBlock label='swap' codeTx={swapTx} />
       <CodeBlock label='orElse' codeTx={orElseTx} />
+      <CodeBlock label='getOrElse' codeTx={getOrElseTx} />
+      <CodeBlock label='getOrElse' codeTx={getOrElseTx} />
+      <CodeBlock label='elem' codeTx={elemTx} />
+      <CodeBlock label='exists' codeTx={existsTx} />
+      <CodeBlock label='parseJSON' codeTx={parseJSONTx} />
+      <CodeBlock label='stringifyJSON' codeTx={stringifyJSONTx} />
+      <CodeBlock label='getWitherable' codeTx={getWitherableTx} />
+      <CodeBlock label='getValidation' codeTx={getValidationTx} />
+      <CodeBlock label='getValidationSemigroup' codeTx={getValidationSemigroupTx} />
+      <CodeBlock label='getValidationMonoid' codeTx={getValidationMonoidTx} />
     </>
   )
 }
