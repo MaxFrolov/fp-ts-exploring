@@ -166,7 +166,7 @@ const FunctionContainer = () => {
     return (...a) => f(a)
   }
   
-  untupled((x: number[]) => x.join(', '))(1, 2]) // ${untupledTest(1, 2)} -> <number>
+  untupled((x: number[]): string => x.join(', '))(1, 2) // ${untupledTest(1, 2)} -> <string>
   `
 
   return (
