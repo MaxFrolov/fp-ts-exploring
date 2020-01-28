@@ -7,6 +7,11 @@ import * as S from 'fp-ts/lib/Show'
 import * as A from 'fp-ts/lib/Array'
 import * as Eq from 'fp-ts/lib/Eq'
 import * as O from 'fp-ts/lib/Ord'
+import * as Op from 'fp-ts/lib/Option'
+import * as Ei from 'fp-ts/lib/Either'
+import * as F from 'fp-ts/lib/function'
+import * as I from 'fp-ts/lib/Identity'
+import * as M from 'fp-ts/lib/Monoid'
 
 const ArrayContainer = () => {
   // common types
@@ -230,7 +235,7 @@ const ArrayContainer = () => {
   
   const len = foldLeft<number, number>(
     () => 0,
-    (_, tail) => 1 + foldLeftLenEx(tail)
+    (_, tail) => 1 + len(tail)
   )
   
   const reduce = foldLeft<number, number>(
@@ -505,7 +510,1016 @@ const ArrayContainer = () => {
 
   // spanLeft
   const spanLeftTx = `
+  // Split an array into two parts:
+  // 1. the longest initial subarray for which all elements satisfy the specified predicate
+  // 2. the remaining elements
+ 
+  function spanLeft<A, B extends A>(
+    refinement: Refinement<A, B>
+  ): (as: Array<A>) => { init: Array<B>; rest: Array<A> }
+  function spanLeft<A>(predicate: Predicate<A>): (as: Array<A>) => { init: Array<A>; rest: Array<A> }
+  function spanLeft<A>(predicate: Predicate<A>): (as: Array<A>) => { init: Array<A>; rest: Array<A> } {
+    return as => {
+      const i = spanIndexUncurry(as, predicate)
+      const init = Array(i)
+      for (let j = 0; j < i; j++) {
+        init[j] = as[j]
+      }
+      const l = as.length
+      const rest = Array(l - i)
+      for (let j = i; j < l; j++) {
+        rest[j - i] = as[j]
+      }
+      return { init, rest }
+    }
+  }
   
+  spanLeft((n: number) => n % 2 === 1)([1, 3, 2, 4, 5]) // ${JSON.stringify(
+    A.spanLeft((n: number) => n % 2 === 1)([1, 3, 2, 4, 5])
+  )}
+  `
+
+  // dropLeft
+  const dropLeftTx = `
+  // Drop a number of elements from the start of an array, creating a new array
+  
+  dropLeft(n: number): <A>(as: Array<A>) => Array<A> {
+    return as => as.slice(n, as.length)
+  }
+  
+  dropLeft(2)([1, 2, 3]) // ${JSON.stringify(A.dropLeft(2)([1, 2, 3]))}
+  dropLeft(1)([1, 2, 3]) // ${JSON.stringify(A.dropLeft(1)([1, 2, 3]))}
+  `
+
+  // dropRight
+  const dropRightTx = `
+  // Drop a number of elements from the end of an array, creating a new array
+  
+  function dropRight(n: number): <A>(as: Array<A>) => Array<A> {
+    return as => as.slice(0, as.length - n)
+  }
+  
+  dropRight(2)([1, 2, 3, 4, 5]) // ${JSON.stringify(A.dropRight(2)([1, 2, 3]))}
+  dropRight(1)([1, 2, 3, 4, 5]) // ${JSON.stringify(A.dropRight(1)([1, 2, 3]))}
+  `
+
+  // dropLeftWhile
+  const dropLeftWhileTx = `
+  // Remove the longest initial subarray for which all element satisfy the specified predicate, creating a new array
+  
+  function dropLeftWhile<A>(predicate: Predicate<A>): (as: Array<A>) => Array<A> {
+    return as => {
+      const i = spanIndexUncurry(as, predicate)
+      const l = as.length
+      const rest = Array(l - i)
+      for (let j = i; j < l; j++) {
+        rest[j - i] = as[j]
+      }
+      return rest
+    }
+  }
+  
+  dropLeftWhile((n: number) => n % 2 === 1)([1, 3, 2, 4, 5]) // ${JSON.stringify(
+    A.dropLeftWhile((n: number) => n % 2 === 1)([1, 3, 2, 4, 5])
+  )}
+  `
+
+  // findIndex
+  const findIndexTx = `
+  // Find the first index for which a predicate holds
+  function findIndex<A>(predicate: Predicate<A>): (as: Array<A>) => Option<number> {
+    return as => {
+      const len = as.length
+      for (let i = 0; i < len; i++) {
+        if (predicate(as[i])) {
+          return some(i)
+        }
+      }
+      return none
+    }
+  }
+  
+  findIndex((n: number) => n === 2)([1, 2, 3]) // ${JSON.stringify(A.findIndex((n: number) => n === 2)([1, 2, 3]))}
+  findIndex((n: number) => n === 2)([]) // ${JSON.stringify(A.findIndex((n: number) => n === 2)([]))}
+  `
+
+  // findFirst
+  const findFirstTX = `
+  // Find the first element which satisfies a predicate (or a refinement) function
+  
+  function findFirst<A, B extends A>(refinement: Refinement<A, B>): (as: Array<A>) => Option<B>
+  function findFirst<A>(predicate: Predicate<A>): (as: Array<A>) => Option<A>
+  function findFirst<A>(predicate: Predicate<A>): 0(as: Array<A>) => Option<A> {
+    return as => {
+      const len = as.length
+      for (let i = 0; i < len; i++) {
+        if (predicate(as[i])) {
+          return some(as[i])
+        }
+      }
+      return none
+    }
+  }
+
+  findFirst((x: { a: number, b: number }) => x.a === 1)([{ a: 1, b: 1 }, { a: 1, b: 2 }]) // ${JSON.stringify(
+    A.findFirst((x: { a: number; b: number }) => x.a === 1)([
+      { a: 1, b: 1 },
+      { a: 1, b: 2 }
+    ])
+  )}
+  `
+
+  // findFirstMap
+  const findFirstMapTx = `
+  findFirstMap<A, B>(f: (a: A) => Option<B>): (as: Array<A>) => Option<B> {
+    return as => {
+      const len = as.length
+      for (let i = 0; i < len; i++) {
+        const v = f(as[i])
+        if (isSome(v)) {
+          return v
+        }
+      }
+      return none
+    }
+  }
+  
+  interface Person {
+    name: string
+    age?: number
+  }
+  
+  const persons: Array<Person> = [{ name: 'John' }, { name: 'Mary', age: 45 }, { name: 'Joey', age: 28 }]
+  
+  findFirstMap((p: Person) => (p.age === undefined ? none : some(p.name)))(persons) // ${Op.some('Mary')}
+  `
+
+  // findLast
+  const findLastTx = `
+  // Find the last element which satisfies a predicate function
+  
+  function findLast<A, B extends A>(refinement: Refinement<A, B>): (as: Array<A>) => Option<B>
+  function findLast<A>(predicate: Predicate<A>): (as: Array<A>) => Option<A>
+  function findLast<A>(predicate: Predicate<A>): (as: Array<A>) => Option<A> {
+    return as => {
+      const len = as.length
+      for (let i = len - 1; i >= 0; i--) {
+        if (predicate(as[i])) {
+          return some(as[i])
+        }
+      }
+      return none
+    }
+  }
+  
+  findLast((x: { a: number, b: number }) => x.a === 1)([{ a: 1, b: 1 }, { a: 1, b: 2 }]) // ${JSON.stringify(
+    A.findLast((x: { a: number; b: number }) => x.a === 1)([
+      { a: 1, b: 1 },
+      { a: 1, b: 2 }
+    ])
+  )}
+  `
+
+  // findLastMap
+  const findLastMapTx = `
+  // Find the last element returned by an option based selector function
+  
+  function findLastMap<A, B>(f: (a: A) => Option<B>): (as: Array<A>) => Option<B> {
+    return as => {
+      const len = as.length
+      for (let i = len - 1; i >= 0; i--) {
+        const v = f(as[i])
+        if (isSome(v)) {
+          return v
+        }
+      }
+      return none
+    }
+  }
+  
+  interface Person {
+    name: string
+    age?: number
+  }
+  
+  const persons: Array<Person> = [{ name: 'John' }, { name: 'Mary', age: 45 }, { name: 'Joey', age: 28 }]
+  
+  findLastMap((p: Person) => (p.age === undefined ? none : some(p.name)))(persons) // ${JSON.stringify(Op.some('Joey'))}
+  `
+
+  // findLastIndex
+  const findLastIndexTx = `
+  // Returns the index of the last element of the list which matches the predicate
+  
+  function findLastIndex<A>(predicate: Predicate<A>): (as: Array<A>) => Option<number> {
+    return as => {
+      const len = as.length
+      for (let i = len - 1; i >= 0; i--) {
+        if (predicate(as[i])) {
+          return some(i)
+        }
+      }
+      return none
+    }
+  }
+  
+  interface X {
+    a: number
+    b: number
+  }
+  
+  const xs: Array<X> = [{ a: 1, b: 0 }, { a: 1, b: 1 }]
+  
+  findLastIndex((x: { a: number }) => x.a === 1)(xs) // ${JSON.stringify(Op.some(1))}
+  findLastIndex((x: { a: number }) => x.a === 4)(xs) // ${JSON.stringify(Op.none)}
+  `
+
+  // copy
+  const copyTx = `
+  // Returns a copy of the array
+  
+  function copy<A>(as: Array<A>): Array<A> {
+    const l = as.length
+    const r = Array(l)
+    
+    for (let i = 0; i < l; i++) {
+      r[i] = as[i]
+    }
+    
+    return r
+  }
+  
+  copy<number>([1, 2, 3]) // ${JSON.stringify(
+    A.copy<number>([1, 2, 3])
+  )}
+  `
+
+  // unsafeInsertAt
+  const unsafeInsertAtTx = `
+  // Insert an element at the specified index, creating a copy
+  
+  function unsafeInsertAt<A>(i: number, a: A, as: Array<A>): Array<A> {
+    const xs = copy(as)
+    
+    xs.splice(i, 0, a)
+    
+    return xs
+  }
+  
+  unsafeInsertAt<number>(1, 5, [1, 2, 3]) // ${JSON.stringify(A.unsafeInsertAt(1, 5, [1, 2, 3]))}
+  `
+
+  // insertAt
+  const insertAtTx = `
+  // Insert an element at the specified index, creating a new array, or returning \`None\` if the index is out of bounds
+  
+  insertAt<A>(i: number, a: A): (as: Array<A>) => Option<Array<A>> {
+    return as => (i < 0 || i > as.length ? none : some(unsafeInsertAt(i, a, as)))
+  }
+  
+  insertAt<number>(2, 5)([1, 2, 3, 4]) // ${JSON.stringify(A.insertAt<number>(2, 5)([1, 2, 3, 4]))}
+  `
+
+  // unsafeUpdateAt
+  const unsafeUpdateAtTx = `
+  // Change the element at the specified index, creating a copy
+  
+  function unsafeUpdateAt<A>(i: number, a: A, as: Array<A>): Array<A> {
+    if (as[i] === a) {
+      return as
+    } else {
+      const xs = copy(as)
+      xs[i] = a
+      return xs
+    }
+  }
+  
+  unsafeUpdateAt<number>(1, 3, [1, 2, 3]) // ${JSON.stringify(
+    A.unsafeUpdateAt<number>(1, 3, [1, 2, 3])
+  )}
+  `
+
+  // updateAt
+  const updateAtTx = `
+  // Change the element at the specified index, creating a new array, or returning \`None\` if the index is out of bounds
+  
+  function updateAt<A>(i: number, a: A): (as: Array<A>) => Option<Array<A>> {
+    return as => (isOutOfBound(i, as) ? none : some(unsafeUpdateAt(i, a, as)))
+  }
+  
+  updateAt(1, 1)([1, 2, 3]) // ${JSON.stringify(A.updateAt(1, 1)([1, 2, 3]))}
+  updateAt(1, 1)([]) // ${JSON.stringify(A.updateAt(1, 1)([]))}
+  `
+
+  // unsafeDeleteAt
+  const unsafeDeleteAtTx = `
+  // Delete the element at the specified index, creating a copy
+  
+  function unsafeDeleteAt<A>(i: number, as: Array<A>): Array<A> {
+    const xs = copy(as)
+    
+    xs.splice(i, 1)
+    
+    return xs
+  }
+  
+  unsafeDeleteAt(1, [1, 2, 3]) // ${JSON.stringify(A.unsafeDeleteAt(1, [1, 2, 3]))}
+  `
+
+  // deleteAt
+  const deleteAtTx = `
+  // Delete the element at the specified index, creating a new array, or returning \`None\` if the index is out of bounds
+  
+  function deleteAt(i: number): <A>(as: Array<A>) => Option<Array<A>> {
+    return as => (isOutOfBound(i, as) ? none : some(unsafeDeleteAt(i, as)))
+  }
+  
+  deleteAt(0)([1, 2, 3]) // ${JSON.stringify(A.deleteAt(0)([1, 2, 3]))}
+  deleteAt(0)([]) // ${JSON.stringify(A.deleteAt(0)([]))}
+  `
+
+  // modifyAt
+  const modifyAtTx = `
+  // Apply a function to the element at the specified index, creating a new array, or returning \`None\` if the index is out
+  // of bounds
+  
+  function modifyAt<A>(i: number, f: (a: A) => A): (as: Array<A>) => Option<Array<A>> {
+    return as => (isOutOfBound(i, as) ? none : some(unsafeUpdateAt(i, f(as[i]), as)))
+  }
+  
+  const double = (x: number): number => x * 2
+  
+  modifyAt(1, double)([1, 2, 3]) // ${JSON.stringify(A.modifyAt(1, (x: number): number => x * 2)([1, 2, 3]))}
+  modifyAt(1, double)([]) // ${JSON.stringify(A.modifyAt(1, (x: number): number => x * 2)([]))}
+  `
+
+  // reverse
+  const reverseTx = `
+  // Reverse an array, creating a new array
+  
+  function reverse<A>(as: Array<A>): Array<A> {
+    return copy(as).reverse()
+  }
+  
+  reverse([1, 2, 3]) // ${JSON.stringify(A.reverse([1, 2, 3]))}
+  `
+
+  // rights
+  const rightsTx = `
+  // Extracts from an array of \`Either\` all the \`Right\` elements. All the \`Right\` elements are extracted in order
+  
+  function rights<E, A>(as: Array<Either<E, A>>): Array<A> {
+    const r: Array<A> = []
+    const len = as.length
+    
+    for (let i = 0; i < len; i++) {
+      const a = as[i]
+      if (a._tag === 'Right') {
+        r.push(a.right)
+      }
+    }
+    
+    return r
+  }
+  
+  rights([right(1), left('foo'), right(2)]) // ${JSON.stringify(A.rights([Ei.right(1), Ei.left('foo'), Ei.right(2)]))}
+  `
+
+  // lefts
+  const leftsTx = `
+  // Extracts from an array of \`Either\` all the \`Left\` elements. All the \`Left\` elements are extracted in order
+  
+  function lefts<E, A>(as: Array<Either<E, A>>): Array<E> {
+    const r: Array<E> = []
+    const len = as.length
+    
+    for (let i = 0; i < len; i++) {
+      const a = as[i]
+      if (a._tag === 'Left') {
+        r.push(a.left)
+      }
+    }
+    
+    return r
+  }
+  
+  lefts([right(1), left('foo'), right(2)]) // ${JSON.stringify(A.lefts([Ei.right(1), Ei.left('foo'), Ei.right(2)]))}
+  `
+
+  // sort
+  const sortTx = `
+  // Sort the elements of an array in increasing order, creating a new array
+  
+  function sort<A>(O: Ord<A>): (as: Array<A>) => Array<A> {
+    return as => copy(as).sort(O.compare)
+  }
+  
+  sort(ordNumber)([3, 2, 1]) // ${JSON.stringify(A.sort(O.ordNumber)([3, 2, 1]))}
+  `
+
+  // zipWith
+  const zipWithTx = `
+  // Apply a function to pairs of elements at the same index in two arrays, collecting the results in a new array. If one
+  // input array is short, excess elements of the longer array are discarded.
+  
+  function zipWith<A, B, C>(fa: Array<A>, fb: Array<B>, f: (a: A, b: B) => C): Array<C> {
+    const fc = []
+    const len = Math.min(fa.length, fb.length)
+    
+    for (let i = 0; i < len; i++) {
+      fc[i] = f(fa[i], fb[i])
+    }
+    
+    return fc
+  }
+  
+  zipWith([1, 2, 3], ['a', 'b', 'c', 'd'], (n, s) => s + n) // ${JSON.stringify(
+    A.zipWith([1, 2, 3], ['a', 'b', 'c', 'd'], (n, s) => s + n)
+  )}
+  `
+
+  // zip
+  const zipTx = `
+  // Takes two arrays and returns an array of corresponding pairs. If one input array is short, excess elements of the
+  // longer array are discarded
+  
+  function zip<A, B>(fa: Array<A>, fb: Array<B>): Array<[A, B]> {
+    return zipWith(fa, fb, (a, b) => [a, b])
+  }
+  
+  zip([1, 2, 3], ['a', 'b', 'c', 'd']) // ${JSON.stringify(A.zip([1, 2, 3], ['a', 'b', 'c', 'd']))}
+  `
+
+  // unzip
+  const unzipTx = `
+  // The function is reverse of \`zip\`. Takes an array of pairs and return two corresponding arrays
+
+  function unzip<A, B>(as: Array<[A, B]>): [Array<A>, Array<B>] {
+    const fa = []
+    const fb = []
+  
+    for (let i = 0; i < as.length; i++) {
+      fa[i] = as[i][0]
+      fb[i] = as[i][1]
+    }
+  
+    return [fa, fb]
+  }
+  
+  unzip([[1, 'a'], [2, 'b'], [3, 'c']]) // ${JSON.stringify(
+    A.unzip([
+      [1, 'a'],
+      [2, 'b'],
+      [3, 'c']
+    ])
+  )}
+  `
+
+  // rotate
+  const rotateTx = `
+  // Rotate an array to the right by \`n\` steps
+  
+  function rotate(n: number): <A>(as: Array<A>) => Array<A> {
+    return as => {
+      const len = as.length
+      
+      if (n === 0 || len <= 1 || len === Math.abs(n)) {
+        return as
+      } else if (n < 0) {
+        return rotate(len + n)(as)
+      } else {
+        return as.slice(-n).concat(as.slice(0, len - n))
+      }
+    }
+  }
+  
+  rotate(2)([1, 2, 3, 4, 5]) // ${JSON.stringify(A.rotate(2)([1, 2, 3, 4, 5]))}
+  `
+
+  // elem
+  const elemTx = `
+  // Test if a value is a member of an array. Takes a \`Eq<A>\` as a single
+  // argument which returns the function to use to search for a value of type \`A\` in
+  // an array of type \`Array<A>\`
+  
+  function elem<A>(E: Eq<A>): (a: A, as: Array<A>) => boolean {
+    return (a, as) => {
+      const predicate = (element: A) => E.equals(element, a)
+      let i = 0
+      const len = as.length
+      
+      for (; i < len; i++) {
+        if (predicate(as[i])) {
+          return true
+        }
+      }
+      
+      return false
+    }
+  }
+  
+  elem(eqNumber)(1, [1, 2, 3]) // ${JSON.stringify(A.elem(Eq.eqNumber)(1, [1, 2, 3]))}
+  elem(eqNumber)(4, [1, 2, 3]) // ${JSON.stringify(A.elem(Eq.eqNumber)(4, [1, 2, 3]))}
+  `
+
+  // uniq
+  const uniqTx = `
+  // Remove duplicates from an array, keeping the first occurrence of an element.
+  
+  function uniq<A>(E: Eq<A>): (as: Array<A>) => Array<A> {
+    const elemS = elem(E)
+    
+    return as => {
+      const r: Array<A> = []
+      const len = as.length
+      let i = 0
+      
+      for (; i < len; i++) {
+        const a = as[i]
+        
+        if (!elemS(a, r)) {
+          r.push(a)
+        }
+      }
+      
+      return len === r.length ? as : r
+    }
+  }
+  
+  uniq(eqNumber)([1, 2, 1]) // ${JSON.stringify(A.uniq(Eq.eqNumber)([1, 2, 1]))}
+  `
+
+  // sortBy
+  interface Person {
+    name: string
+    age: number
+  }
+
+  const byName = O.ord.contramap(O.ordString, (p: Person) => p.name)
+  const byAge = O.ord.contramap(O.ordNumber, (p: Person) => p.age)
+
+  const sortByNameByAge = A.sortBy([byName, byAge])
+  const sortByAgeByName = A.sortBy([byAge, byName])
+
+  const persons = [
+    { name: 'a', age: 1 },
+    { name: 'b', age: 3 },
+    { name: 'c', age: 2 },
+    { name: 'b', age: 2 }
+  ]
+
+  const sortByTx = `
+  // Sort the elements of an array in increasing order, where elements are compared using first \`ords[0]\`, then \`ords[1]\`,
+  // etc...
+  
+  function sortBy<A>(ords: Array<Ord<A>>): (as: Array<A>) => Array<A> {
+    const M = getOrdMonoid<A>()
+    
+    return sort(ords.reduce(M.concat, M.empty))
+  }
+  
+  interface Person {
+    name: string
+    age: number
+  }
+  
+  const byName = ord.contramap(ordString, (p: Person) => p.name)
+  const byAge = ord.contramap(ordNumber, (p: Person) => p.age)
+  
+  const sortByNameByAge = sortBy([byName, byAge])
+  const sortByAgeByName = A.sortBy([byAge, byName])
+  
+  const persons = [{ name: 'a', age: 1 }, { name: 'b', age: 3 }, { name: 'c', age: 2 }, { name: 'b', age: 2 }]
+  
+  sortByNameByAge(persons) // ${JSON.stringify(sortByNameByAge(persons))}
+  sortByAgeByName(persons) // ${JSON.stringify(sortByAgeByName(persons))}
+  `
+
+  // chop
+  const group = S => {
+    return A.chop(as => {
+      const { init, rest } = A.spanLeft(a => S.equals(a, as[0]))(as)
+      return [init, rest]
+    })
+  }
+
+  const chopTx = `
+  // A useful recursion pattern for processing an array to produce a new array, often used for "chopping" up the input
+  // array. Typically chop is called with some function that will consume an initial prefix of the array and produce a
+  // value and the rest of the array.
+  
+  import { eqNumber } from 'fp-ts/lib/Eq'
+  
+  function chop<A, B>(f: (as: NonEmptyArray<A>) => [B, Array<A>]): (as: Array<A>) => Array<B> {
+    return as => {
+      const result: Array<B> = []
+      let cs: Array<A> = as
+      while (isNonEmpty(cs)) {
+        const [b, c] = f(cs)
+        result.push(b)
+        cs = c
+      }
+      return result
+    }
+  }
+  
+  const group = <A>(S: Eq<A>): ((as: Array<A>) => Array<Array<A>>) => {
+    return chop(as => {
+      const { init, rest } = spanLeft((a: A) => S.equals(a, as[0]))(as)
+      return [init, rest]
+    })
+  }
+  
+  group(eqNumber)([1, 1, 2, 3, 3, 4]) // ${JSON.stringify(group(Eq.eqNumber)([1, 1, 2, 3, 3, 4]))}
+  `
+
+  // splitAt
+  const splitAtTx = `
+  // Splits an array into two pieces, the first piece has \`n\` elements.
+  
+  function splitAt(n: number): <A>(as: Array<A>) => [Array<A>, Array<A>] {
+    return as => [as.slice(0, n), as.slice(n)]
+  }
+  
+  splitAt(2)([1, 2, 3, 4, 5]) // ${JSON.stringify(A.splitAt(2)([1, 2, 3, 4, 5]))}
+  splitAt(2)([1]) // ${JSON.stringify(A.splitAt(2)([1]))}
+  splitAt(2)([1, 2]) // ${JSON.stringify(A.splitAt(2)([1, 2]))}
+  splitAt(-1)([1, 2]) // ${JSON.stringify(A.splitAt(-1)([1, 2]))}
+  splitAt(0)([1, 2])) // ${JSON.stringify(A.splitAt(0)([1, 2]))}
+  splitAt(3)([1, 2])) // ${JSON.stringify(A.splitAt(3)([1, 2]))}
+  `
+
+  // chunksOf
+  const chunksOfTx = `
+  // Splits an array into length-\`n\` pieces. The last piece will be shorter if \`n\` does not evenly divide the length of
+  // the array. Note that \`chunksOf(n)([])\` is \`[]\`, not \`[[]]\`. This is intentional, and is consistent with a recursive
+  // definition of \`chunksOf\`; it satisfies the property that
+  
+  function chunksOf(n: number): <A>(as: Array<A>) => Array<Array<A>> {
+    return as => (as.length === 0 ? empty : isOutOfBound(n - 1, as) ? [as] : chop(splitAt(n))(as))
+  }
+  
+  chunksOf(2)([1, 2, 3, 4, 5]) // ${A.chunksOf(2)([1, 2, 3, 4, 5])}
+  chunksOf(2)([1, 2, 3, 4, 5, 6]) // ${A.chunksOf(2)([1, 2, 3, 4, 5, 6])}
+  chunksOf(5)([1, 2, 3, 4, 5]) // ${A.chunksOf(5)([1, 2, 3, 4, 5])}
+  chunksOf(6)([1, 2, 3, 4, 5)]) // ${A.chunksOf(6)([1, 2, 3, 4, 5])}
+  chunksOf(1)([1, 2, 3, 4, 5)]) // ${A.chunksOf(1)([1, 2, 3, 4, 5])}
+  chunksOf(0)([1, 2, 3, 4, 5)]) // ${A.chunksOf(0)([1, 2, 3, 4, 5])}
+  chunksOf(-1)([1, 2, 3, 4, 5)]) // ${A.chunksOf(-1)([1, 2, 3, 4, 5])}
+  `
+
+  // comprehension
+  const comprehensionTx = `
+  import { tuple } from 'fp-ts/lib/function'
+
+  function comprehension<A, B, C, D, R>(
+    input: [Array<A>, Array<B>, Array<C>, Array<D>],
+    f: (a: A, b: B, c: C, d: D) => R,
+    g?: (a: A, b: B, c: C, d: D) => boolean
+  ): Array<R>
+  function comprehension<A, B, C, R>(
+    input: [Array<A>, Array<B>, Array<C>],
+    f: (a: A, b: B, c: C) => R,
+    g?: (a: A, b: B, c: C) => boolean
+  ): Array<R>
+  function comprehension<A, R>(input: [Array<A>], f: (a: A) => R, g?: (a: A) => boolean): Array<R>
+  function comprehension<A, B, R>(
+    input: [Array<A>, Array<B>],
+    f: (a: A, b: B) => R,
+    g?: (a: A, b: B) => boolean
+  ): Array<R>
+  function comprehension<A, R>(input: [Array<A>], f: (a: A) => boolean, g?: (a: A) => R): Array<R>
+  function comprehension<R>(
+    input: Array<Array<any>>,
+    f: (...xs: Array<any>) => R,
+    g: (...xs: Array<any>) => boolean = () => true
+  ): Array<R> {
+    const go = (scope: Array<any>, input: Array<Array<any>>): Array<R> => {
+      if (input.length === 0) {
+        return g(...scope) ? [f(...scope)] : empty
+      } else {
+        return array.chain(input[0], x => go(snoc(scope, x), input.slice(1)))
+      }
+    }
+    return go(empty, input)
+  }
+  
+  comprehension([[1, 2, 3]], a => a * 2) // ${JSON.stringify(A.comprehension([[1, 2, 3]], a => a * 2))}
+  comprehension([[1, 2, 3], ['a', 'b']], tuple, (a, b) => (a + b.length) % 2 === 0) // ${JSON.stringify(
+    A.comprehension(
+      [
+        [1, 2, 3],
+        ['a', 'b']
+      ],
+      F.tuple,
+      (a, b) => (a + b.length) % 2 === 0
+    )
+  )}
+  comprehension([[1, 2, 3], ['a', 'b']], tuple) // ${JSON.stringify(
+    A.comprehension(
+      [
+        [1, 2, 3],
+        ['a', 'b']
+      ],
+      F.tuple
+    )
+  )}
+  `
+
+  // union
+  const unionTx = `
+  // Creates an array of unique values, in order, from all given arrays using a \`Eq\` for equality comparisons
+  
+  function union<A>(E: Eq<A>): (xs: Array<A>, ys: Array<A>) => Array<A> {
+    const elemE = elem(E)
+    return (xs, ys) =>
+      concat(
+        xs,
+        ys.filter(a => !elemE(a, xs))
+      )
+  }
+  
+  union(eqNumber)([1, 2], [2, 3]) // ${A.union(Eq.eqNumber)([1, 2], [2, 3])}
+  union(eqNumber)([1, 2], [3, 4]) // ${A.union(Eq.eqNumber)([1, 2], [3, 4])}
+  union(eqNumber)([1, 2], [1, 2]) // ${A.union(Eq.eqNumber)([1, 2], [1, 2])}
+  `
+
+  // intersection
+  const intersectionTx = `
+  // Creates an array of unique values that are included in all given arrays using a \`Eq\` for equality
+  // comparisons. The order and references of result values are determined by the first array.
+  
+  function intersection<A>(E: Eq<A>): (xs: Array<A>, ys: Array<A>) => Array<A> {
+    const elemE = elem(E)
+    return (xs, ys) => xs.filter(a => elemE(a, ys))
+  }
+  
+  intersection(eqNumber)([1, 2], [2, 3]) // ${JSON.stringify(A.intersection(Eq.eqNumber)([1, 2], [2, 3]))}
+  intersection(eqNumber)([1, 2], [3, 4]) // ${JSON.stringify(A.intersection(Eq.eqNumber)([1, 2], [3, 4]))}
+  intersection(eqNumber)([1, 2], [1, 2]) // ${JSON.stringify(A.intersection(Eq.eqNumber)([1, 2], [1, 2]))}
+  `
+
+  // difference
+  const differenceTx = `
+  // Creates an array of array values not included in the other given array using a \`Eq\` for equality
+  // comparisons. The order and references of result values are determined by the first array.
+  
+  function difference<A>(E: Eq<A>): (xs: Array<A>, ys: Array<A>) => Array<A> {
+    const elemE = elem(E)
+    return (xs, ys) => xs.filter(a => !elemE(a, ys))
+  }
+  
+  difference(eqNumber)([1, 2], [2, 3]) // ${JSON.stringify(A.difference(Eq.eqNumber)([1, 2], [2, 3]))}
+  difference(eqNumber)([1, 2], [3, 4]) // ${JSON.stringify(A.difference(Eq.eqNumber)([1, 2], [3, 4]))}
+  difference(eqNumber)([1, 2], [1, 2]) // ${JSON.stringify(A.difference(Eq.eqNumber)([1, 2], [1, 2]))}
+  `
+
+  // of
+  const ofTx = `
+  const of = <A>(a: A): Array<A> => [a]
+  
+  of<number>(5) // ${JSON.stringify(A.of<number>(5))}
+  of<string>(5) // ${JSON.stringify(A.of<string>('hello'))}
+  `
+
+  // array
+  const arrayTx = `
+  // Array monad
+  
+  const array: Monad1<URI> &
+    Foldable1<URI> &
+    Unfoldable1<URI> &
+    TraversableWithIndex1<URI, number> &
+    Alternative1<URI> &
+    Extend1<URI> &
+    Compactable1<URI> &
+    FilterableWithIndex1<URI, number> &
+    Witherable1<URI> &
+    FunctorWithIndex1<URI, number> &
+    FoldableWithIndex1<URI, number> = {
+    URI,
+    map: (fa, f) => fa.map(a => f(a)),
+    mapWithIndex: (fa, f) => fa.map((a, i) => f(i, a)),
+    compact: as => array.filterMap(as, identity),
+    separate: <B, C>(fa: Array<Either<B, C>>): Separated<Array<B>, Array<C>> => {
+      const left: Array<B> = []
+      const right: Array<C> = []
+      for (const e of fa) {
+        if (e._tag === 'Left') {
+          left.push(e.left)
+        } else {
+          right.push(e.right)
+        }
+      }
+      return {
+        left,
+        right
+      }
+    },
+    filter: <A>(as: Array<A>, predicate: Predicate<A>): Array<A> => {
+      return as.filter(predicate)
+    },
+    filterMap: (as, f) => array.filterMapWithIndex(as, (_, a) => f(a)),
+    partition: <A>(fa: Array<A>, predicate: Predicate<A>): Separated<Array<A>, Array<A>> => {
+      return array.partitionWithIndex(fa, (_, a) => predicate(a))
+    },
+    partitionMap: (fa, f) => array.partitionMapWithIndex(fa, (_, a) => f(a)),
+    of,
+    ap: (fab, fa) => flatten(array.map(fab, f => array.map(fa, f))),
+    chain: (fa, f) => {
+      let resLen = 0
+      const l = fa.length
+      const temp = new Array(l)
+      for (let i = 0; i < l; i++) {
+        const e = fa[i]
+        const arr = f(e)
+        resLen += arr.length
+        temp[i] = arr
+      }
+      const r = Array(resLen)
+      let start = 0
+      for (let i = 0; i < l; i++) {
+        const arr = temp[i]
+        const l = arr.length
+        for (let j = 0; j < l; j++) {
+          r[j + start] = arr[j]
+        }
+        start += l
+      }
+      return r
+    },
+    reduce: (fa, b, f) => array.reduceWithIndex(fa, b, (_, b, a) => f(b, a)),
+    foldMap: M => {
+      const foldMapWithIndexM = array.foldMapWithIndex(M)
+      return (fa, f) => foldMapWithIndexM(fa, (_, a) => f(a))
+    },
+    reduceRight: (fa, b, f) => array.reduceRightWithIndex(fa, b, (_, a, b) => f(a, b)),
+    unfold: <A, B>(b: B, f: (b: B) => Option<[A, B]>): Array<A> => {
+      const ret: Array<A> = []
+      let bb = b
+      while (true) {
+        const mt = f(bb)
+        if (isSome(mt)) {
+          const [a, b] = mt.value
+          ret.push(a)
+          bb = b
+        } else {
+          break
+        }
+      }
+      return ret
+    },
+    traverse: <F>(F: Applicative<F>): (<A, B>(ta: Array<A>, f: (a: A) => HKT<F, B>) => HKT<F, Array<B>>) => {
+      const traverseWithIndexF = array.traverseWithIndex(F)
+      return (ta, f) => traverseWithIndexF(ta, (_, a) => f(a))
+    },
+    sequence: <F>(F: Applicative<F>) => <A>(ta: Array<HKT<F, A>>): HKT<F, Array<A>> => {
+      return array.reduce(ta, F.of(array.zero()), (fas, fa) =>
+        F.ap(
+          F.map(fas, as => (a: A) => snoc(as, a)),
+          fa
+        )
+      )
+    },
+    zero: () => empty,
+    alt: (fx, f) => concat(fx, f()),
+    extend: (fa, f) => fa.map((_, i, as) => f(as.slice(i))),
+    wither: <F>(F: Applicative<F>): (<A, B>(ta: Array<A>, f: (a: A) => HKT<F, Option<B>>) => HKT<F, Array<B>>) => {
+      const traverseF = array.traverse(F)
+      return (wa, f) => F.map(traverseF(wa, f), array.compact)
+    },
+    wilt: <F>(
+      F: Applicative<F>
+    ): (<A, B, C>(wa: Array<A>, f: (a: A) => HKT<F, Either<B, C>>) => HKT<F, Separated<Array<B>, Array<C>>>) => {
+      const traverseF = array.traverse(F)
+      return (wa, f) => F.map(traverseF(wa, f), array.separate)
+    },
+    reduceWithIndex: (fa, b, f) => {
+      const l = fa.length
+      let r = b
+      for (let i = 0; i < l; i++) {
+        r = f(i, r, fa[i])
+      }
+      return r
+    },
+    foldMapWithIndex: M => (fa, f) => fa.reduce((b, a, i) => M.concat(b, f(i, a)), M.empty),
+    reduceRightWithIndex: (fa, b, f) => fa.reduceRight((b, a, i) => f(i, a, b), b),
+    traverseWithIndex: <F>(F: Applicative<F>) => <A, B>(
+      ta: Array<A>,
+      f: (i: number, a: A) => HKT<F, B>
+    ): HKT<F, Array<B>> => {
+      return array.reduceWithIndex(ta, F.of<Array<B>>(array.zero()), (i, fbs, a) =>
+        F.ap(
+          F.map(fbs, bs => (b: B) => snoc(bs, b)),
+          f(i, a)
+        )
+      )
+    },
+    partitionMapWithIndex: <A, B, C>(
+      fa: Array<A>,
+      f: (i: number, a: A) => Either<B, C>
+    ): Separated<Array<B>, Array<C>> => {
+      const left: Array<B> = []
+      const right: Array<C> = []
+      for (let i = 0; i < fa.length; i++) {
+        const e = f(i, fa[i])
+        if (e._tag === 'Left') {
+          left.push(e.left)
+        } else {
+          right.push(e.right)
+        }
+      }
+      return {
+        left,
+        right
+      }
+    },
+    partitionWithIndex: <A>(
+      fa: Array<A>,
+      predicateWithIndex: (i: number, a: A) => boolean
+    ): Separated<Array<A>, Array<A>> => {
+      const left: Array<A> = []
+      const right: Array<A> = []
+      for (let i = 0; i < fa.length; i++) {
+        const a = fa[i]
+        if (predicateWithIndex(i, a)) {
+          right.push(a)
+        } else {
+          left.push(a)
+        }
+      }
+      return {
+        left,
+        right
+      }
+    },
+    filterMapWithIndex: <A, B>(fa: Array<A>, f: (i: number, a: A) => Option<B>): Array<B> => {
+      const result: Array<B> = []
+      for (let i = 0; i < fa.length; i++) {
+        const optionB = f(i, fa[i])
+        if (isSome(optionB)) {
+          result.push(optionB.value)
+        }
+      }
+      return result
+    },
+    filterWithIndex: <A>(fa: Array<A>, predicateWithIndex: (i: number, a: A) => boolean): Array<A> => {
+      return fa.filter((a, i) => predicateWithIndex(i, a))
+    }
+  }
+  
+  // compact
+  array.compact([O.some(1), O.some(2), O.some(3)]) // ${JSON.stringify(A.array.compact([Op.some(1), Op.some(2), Op.some(3)]))}
+  array.compact([O.some(1), O.none, O.some(3)]) // ${JSON.stringify(A.array.compact([Op.some(1), Op.none, Op.some(3)]))}
+  // separate
+  array.separate([]) // ${JSON.stringify(A.array.separate([]))}
+  array.separate([left(123), right('123')]) // ${JSON.stringify(A.array.separate([Ei.left(123), Ei.right('123')]))}
+  // filter
+  array.filter([1, 2, 3], (n: number) => n % 2 === 1) // ${JSON.stringify(A.array.filter([1, 2, 3], (n: number) => n % 2 === 1))}
+  array.filter([O.some(3), O.some(2), O.some(1)], O.isSome) // ${JSON.stringify(A.array.filter([Op.some(3), Op.some(2), Op.some(1)], Op.isSome))}
+  array.filter([O.some(3), O.none, O.some(1)], O.isSome) // ${JSON.stringify(A.array.filter([Op.some(3), Op.none, Op.some(1)], Op.isSome))}
+  // filterWithIndex
+  array.filterWithIndex(['a', 'b', 'c'], (n: number) => n % 2 === 0) // ${JSON.stringify(A.array.filterWithIndex(['a', 'b', 'c'], (n: number) => n % 2 === 0))}
+  // filterMap
+  array.filterMap([1, 2, 3], (n: number) => (n % 2 === 0 ? O.none : O.some(n))) // ${JSON.stringify(A.array.filterMap([1, 2, 3], (n: number) => (n % 2 === 0 ? Op.none : Op.some(n))))}
+  // partitionMap
+  array.partitionMap([], identity) // ${JSON.stringify(A.array.partitionMap([], F.identity))}
+  array.partitionMap([right(1), left('foo'), right(2)], identity) // ${JSON.stringify(A.array.partitionMap([Ei.right(1), Ei.left('foo'), Ei.right(2)], F.identity))}
+  // partition
+  array.partition([], (n: number) => n > 2) // ${JSON.stringify(A.array.partition([], (n: number) => n > 2))}
+  array.partition([1, 3], (n: number) => n > 2) // ${JSON.stringify(A.array.partition([1, 3], (n: number) => n > 2))}
+  array.partition(['a', 'b', 1], x => typeof x === 'number') // ${JSON.stringify(A.array.partition(['a', 'b', 1], x => typeof x === 'number'))}
+  // wither
+  array.wither(I.identity)([], (n: number) => I.identity.of(n > 2 ? O.some(n + 1) : O.none)) // ${JSON.stringify(A.array.wither(I.identity)([], (n: number) => I.identity.of(n > 2 ? Op.some(n + 1) : Op.none)))}
+  array.wither(I.identity)([1, 3], (n: number) => I.identity.of(n > 2 ? O.some(n + 1) : O.none)) // ${JSON.stringify(A.array.wither(I.identity)([1, 3], (n: number) => I.identity.of(n > 2 ? Op.some(n + 1) : Op.none)))}
+  // wilt
+  array.wilt(I.identity)([], (n: number) => I.identity.of(n > 2 ? right(n + 1) : left(n - 1))) // ${JSON.stringify(A.array.wilt(I.identity)([], (n: number) => I.identity.of(n > 2 ? Ei.right(n + 1) : Ei.left(n - 1))))}
+  array.wilt(I.identity)([1, 3], (n: number) => I.identity.of(n > 2 ? right(n + 1) : left(n - 1))) // ${JSON.stringify(A.array.wilt(I.identity)([1, 3], (n: number) => I.identity.of(n > 2 ? Ei.right(n + 1) : Ei.left(n - 1))))}
+  // ap
+  array.ap([(n: number) => n * 2, (n: number) => n + 1], [1, 2, 3]) // ${JSON.stringify(A.array.ap([(n: number) => n * 2, (n: number) => n + 1], [1, 2, 3]))}
+  // chain
+  array.chain([1, 2, 3], n => [n, n + 1]) // ${JSON.stringify(A.array.chain([1, 2, 3], n => [n, n + 1]))}
+  // reduce
+  array.reduce(['a', 'b', 'c'], '', (acc, a) => acc + a) // ${JSON.stringify(A.array.reduce(['a', 'b', 'c'], '', (acc, a) => acc + a))}
+  // foldMap
+  array.foldMap(M.monoidString)(['a', 'b', 'c'], F.identity) // ${JSON.stringify(A.array.foldMap(M.monoidString)(['a', 'b', 'c'], F.identity))}
+  array.foldMap(M.monoidString)([], F.identity) // ${JSON.stringify(A.array.foldMap(M.monoidString)([], F.identity))}
+  // reduceRight
+  array.reduceRight(['a', 'b', 'c'], '', (a: string, acc: string) => acc + a) // ${JSON.stringify(A.array.reduceRight(['a', 'b', 'c'], '', (a: string, acc: string) => acc + a))}
+  array.reduceRight([], '', (a: string, acc: string) => acc + a) // ${JSON.stringify(A.array.reduceRight([], '', (a: string, acc: string) => acc + a))}
+  // unfold
+  array.unfold(5, n => (n > 0 ? O.some([n, n - 1]) : O.none)) // ${JSON.stringify(A.array.unfold(5, n => (n > 0 ? Op.some([n, n - 1]) : Op.none)))}
+  // traverse
+  array.traverse(O.option)([1, 2], (n: number): O.Option<number> => (n % 2 === 0 ? O.none : O.some(n))) // ${JSON.stringify(A.array.traverse(Op.option)([1, 2], (n: number): Op.Option<number> => (n % 2 === 0 ? Op.none : Op.some(n))))}
+  array.traverse(O.option)([1, 3], (n: number): O.Option<number> => (n % 2 === 0 ? O.none : O.some(n))) // ${JSON.stringify(A.array.traverse(Op.option)([1, 3], (n: number): Op.Option<number> => (n % 2 === 0 ? Op.none : Op.some(n))))}
+  // sequence
+  array.sequence(O.option)([O.some(1), O.some(3)]) // ${JSON.stringify(A.array.sequence(Op.option)([Op.some(1), Op.some(3)]))}
+  array.sequence(O.option)([O.some(1), O.none]) // ${JSON.stringify(A.array.sequence(Op.option)([Op.some(1), Op.none]))}
+  // alt
+  array.alt([1, 2], () => [3, 4]) // ${JSON.stringify(A.array.alt([1, 2], () => [3, 4]))}
+  // extend
+  array.extend([1, 2, 3, 4], (as: Array<number>) => M.fold(M.monoidSum)(as)) // ${JSON.stringify(A.array.extend([1, 2, 3, 4], (as: Array<number>) => M.fold(M.monoidSum)(as)))}
+  array.extend([1, 2, 3, 4], F.identity) // ${JSON.stringify(A.array.extend([1, 2, 3, 4], F.identity))}
   `
 
   return (
@@ -531,12 +1545,50 @@ const ArrayContainer = () => {
       <CodeBlock label='cons' codeTx={consTx} />
       <CodeBlock label='snoc' codeTx={snocTx} />
       <CodeBlock label='head' codeTx={headTx} />
-      <CodeBlock label='last' codeTx={lastTx} />s
+      <CodeBlock label='last' codeTx={lastTx} />
       <CodeBlock label='tail' codeTx={tailTx} />
       <CodeBlock label='init' codeTx={initTx} />
       <CodeBlock label='takeLeft' codeTx={takeLeftTx} />
       <CodeBlock label='takeRight' codeTx={takeRightTx} />
       <CodeBlock label='takeLeftWhile' codeTx={takeLeftWhileTx} />
+      <CodeBlock label='spanLeft' codeTx={spanLeftTx} />
+      <CodeBlock label='dropLeft' codeTx={dropLeftTx} />
+      <CodeBlock label='dropRight' codeTx={dropRightTx} />
+      <CodeBlock label='dropLeftWhile' codeTx={dropLeftWhileTx} />
+      <CodeBlock label='findIndex' codeTx={findIndexTx} />
+      <CodeBlock label='findFirst' codeTx={findFirstTX} />
+      <CodeBlock label='findFirstMap' codeTx={findFirstMapTx} />
+      <CodeBlock label='findLast' codeTx={findLastTx} />
+      <CodeBlock label='findLastMap' codeTx={findLastMapTx} />
+      <CodeBlock label='findLastIndex' codeTx={findLastIndexTx} />
+      <CodeBlock label='copy' codeTx={copyTx} />
+      <CodeBlock label='unsafeInsertAt' codeTx={unsafeInsertAtTx} />
+      <CodeBlock label='insertAt' codeTx={insertAtTx} />
+      <CodeBlock label='unsafeUpdateAt' codeTx={unsafeUpdateAtTx} />
+      <CodeBlock label='updateAt' codeTx={updateAtTx} />
+      <CodeBlock label='unsafeDeleteAt' codeTx={unsafeDeleteAtTx} />
+      <CodeBlock label='deleteAt' codeTx={deleteAtTx} />
+      <CodeBlock label='modifyAt' codeTx={modifyAtTx} />
+      <CodeBlock label='reverse' codeTx={reverseTx} />
+      <CodeBlock label='rights' codeTx={rightsTx} />
+      <CodeBlock label='lefts' codeTx={leftsTx} />
+      <CodeBlock label='sort' codeTx={sortTx} />
+      <CodeBlock label='zipWith' codeTx={zipWithTx} />
+      <CodeBlock label='zip' codeTx={zipTx} />
+      <CodeBlock label='unzip' codeTx={unzipTx} />
+      <CodeBlock label='rotate' codeTx={rotateTx} />
+      <CodeBlock label='elem' codeTx={elemTx} />
+      <CodeBlock label='uniq' codeTx={uniqTx} />
+      <CodeBlock label='sortBy' codeTx={sortByTx} />
+      <CodeBlock label='chop' codeTx={chopTx} />
+      <CodeBlock label='splitAt' codeTx={splitAtTx} />
+      <CodeBlock label='chunksOf' codeTx={chunksOfTx} />
+      <CodeBlock label='comprehension' codeTx={comprehensionTx} />
+      <CodeBlock label='union' codeTx={unionTx} />
+      <CodeBlock label='intersection' codeTx={intersectionTx} />
+      <CodeBlock label='difference' codeTx={differenceTx} />
+      <CodeBlock label='off' codeTx={ofTx} />
+      <CodeBlock label='array' codeTx={arrayTx} />
     </>
   )
 }
