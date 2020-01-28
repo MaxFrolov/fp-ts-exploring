@@ -2,7 +2,7 @@ import * as React from 'react'
 // view components
 import { CodeBlock } from '@md-components/code-block'
 // views
-import { Title } from '@md-views'
+import { ModuleContainer, Title } from '@md-views'
 // libs
 import * as FN from 'fp-ts/lib/function'
 
@@ -170,7 +170,7 @@ const FunctionContainer = () => {
   `
 
   return (
-    <>
+    <ModuleContainer id='function'>
       <Title>FP-TS (function)</Title>
       <CodeBlock label='identity' codeTx={identityTx} />
       <CodeBlock label='unsafeCoerce' codeTx={unsafeCoerceTx} />
@@ -188,7 +188,7 @@ const FunctionContainer = () => {
       <CodeBlock label='decrement' codeTx={decrementTx} />
       <CodeBlock label='tupled' codeTx={tupledTx} />
       <CodeBlock label='untupled' codeTx={untupledTx} />
-    </>
+    </ModuleContainer>
   )
 }
 

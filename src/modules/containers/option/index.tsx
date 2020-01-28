@@ -1,6 +1,6 @@
 import * as React from 'react'
 // components
-import { Title } from '@md-views'
+import { ModuleContainer, Title } from '@md-views'
 import { CodeBlock } from '@md-components/code-block'
 // libs
 import * as O from 'fp-ts/lib/Option'
@@ -544,7 +544,7 @@ export const OptionContainer: React.FC = () => {
   `
 
   return (
-    <>
+    <ModuleContainer id='option'>
       <Title>FP-TS (Option)</Title>
       <CodeBlock label='common types' codeTx={commonTypesTX} />
       <CodeBlock label='some' codeTx={someTx} />
@@ -571,6 +571,6 @@ export const OptionContainer: React.FC = () => {
       <CodeBlock label='getFirstMonoid' codeTx={getFirstMonoidTx} />
       <CodeBlock label='getLastMonoid' codeTx={getLastMonoidTx} />
       <CodeBlock label='getMonoid' codeTx={getMonoidTx} />
-    </>
+    </ModuleContainer>
   )
 }

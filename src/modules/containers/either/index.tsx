@@ -1,6 +1,6 @@
 import * as React from 'react'
 // components
-import { Title } from '@md-views'
+import { ModuleContainer, Title } from '@md-views'
 import { CodeBlock } from '@md-components/code-block'
 // libs
 import * as E from 'fp-ts/lib/Either'
@@ -821,7 +821,7 @@ export const EitherContainer: React.FC = () => {
   `
 
   return (
-    <>
+    <ModuleContainer id='either'>
       <Title>FP-TS (Either)</Title>
       <CodeBlock label='common types' codeTx={commonTypesTX} />
       <CodeBlock label='left' codeTx={leftTx} />
@@ -849,6 +849,6 @@ export const EitherContainer: React.FC = () => {
       <CodeBlock label='getValidation' codeTx={getValidationTx} />
       <CodeBlock label='getValidationSemigroup' codeTx={getValidationSemigroupTx} />
       <CodeBlock label='getValidationMonoid' codeTx={getValidationMonoidTx} />
-    </>
+    </ModuleContainer>
   )
 }

@@ -1,6 +1,6 @@
 import * as React from 'react'
 // components
-import { Title } from '@md-views'
+import { ModuleContainer, Title } from '@md-views'
 import { CodeBlock } from '@md-components/code-block'
 // libs
 import * as T from 'fp-ts/lib/Task'
@@ -174,7 +174,7 @@ export const TaskContainer: React.FC = () => {
   `
 
   return (
-    <>
+    <ModuleContainer id='task'>
       <Title>FP-TS (Task)</Title>
       <CodeBlock label='common types' codeTx={commonTypesTX} />
       <CodeBlock label='common constants' codeTx={commonConstantsTx} />
@@ -186,6 +186,6 @@ export const TaskContainer: React.FC = () => {
       <CodeBlock label='ofIO' codeTx={ofTx} />
       <CodeBlock label='fromIOK' codeTx={fromIOKTx} />
       <CodeBlock label='chainIOK' codeTx={chainIOKTx} />
-    </>
+    </ModuleContainer>
   )
 }

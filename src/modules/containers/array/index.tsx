@@ -1,6 +1,6 @@
 import * as React from 'react'
 // view components
-import { Title } from '@md-views'
+import { ModuleContainer, Title } from '@md-views'
 import { CodeBlock } from '@md-components/code-block'
 // libs
 import * as S from 'fp-ts/lib/Show'
@@ -1523,7 +1523,7 @@ const ArrayContainer = () => {
   `
 
   return (
-    <>
+    <ModuleContainer id='array'>
       <Title>FP-TS (Array)</Title>
       <CodeBlock label='common types' codeTx={commonTypesTX} />
       <CodeBlock label='getShow' codeTx={getShowTx} />
@@ -1589,7 +1589,7 @@ const ArrayContainer = () => {
       <CodeBlock label='difference' codeTx={differenceTx} />
       <CodeBlock label='off' codeTx={ofTx} />
       <CodeBlock label='array' codeTx={arrayTx} />
-    </>
+    </ModuleContainer>
   )
 }
 
