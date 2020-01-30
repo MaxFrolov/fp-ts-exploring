@@ -15,6 +15,15 @@ import { monoidSum, monoidString } from 'fp-ts/lib/Monoid'
 export const EitherContainer: React.FC = () => {
   // common types
   const commonTypesTX = `
+  declare module './HKT' {
+    interface URItoKind2<E, A> {
+      Either: Either<E, A>
+    }
+  }
+  
+  export const URI = 'Either'
+  export type URI = typeof URI
+  
   interface Left<E> {
     readonly _tag: 'Left'
     readonly left: E
@@ -36,6 +45,8 @@ export const EitherContainer: React.FC = () => {
   function left<E = never, A = never>(e: E): Either<E, A> {
     return { _tag: 'Left', left: e }
   }
+ 
+  /* examples */
   
   left(5) // ${JSON.stringify(E.left(5))}
   left('string_value') // ${JSON.stringify(E.left('string_value'))}
@@ -51,6 +62,8 @@ export const EitherContainer: React.FC = () => {
   function right<E = never, A = never>(a: A): Either<E, A> {
     return { _tag: 'Right', right: a }
   }
+
+  /* examples */
   
   right(5) // ${JSON.stringify(E.right(5))}
   right('string_value') // ${JSON.stringify(E.right('string_value'))}
@@ -70,6 +83,8 @@ export const EitherContainer: React.FC = () => {
     }
   }
   
+  /* examples */
+  
   isLeft(left(1)) // ${JSON.stringify(E.isLeft(E.left(1)))}
   isLeft(right(1)) // ${JSON.stringify(E.isLeft(E.right(1)))}
   `
@@ -81,6 +96,8 @@ export const EitherContainer: React.FC = () => {
   function isRight<E, A>(ma: Either<E, A>): ma is Right<A> {
     return isLeft(ma) ? false : true
   }
+  
+  /* examples */
   
   isRight(left(1)) // ${JSON.stringify(E.isRight(E.left(1)))}
   isRight(right(1)) // ${JSON.stringify(E.isRight(E.right(1)))}
@@ -96,6 +113,8 @@ export const EitherContainer: React.FC = () => {
     return <A>(a: A) => (a == null ? left(e) : right(a as NonNullable<A>))
   }
   
+  /* examples */
+  
   const parse = fromNullable('nully')
 
   fromNullable('nully')(1) // ${JSON.stringify(E.fromNullable('nully')(1))}
@@ -110,6 +129,7 @@ export const EitherContainer: React.FC = () => {
     return e instanceof Error ? e : new Error(String(e))
   }
   
+  /* examples */
 
   toError(1) // ${E.toError(1)}
   toError('string') // ${E.toError('string')}
@@ -129,7 +149,8 @@ export const EitherContainer: React.FC = () => {
     }
   }
   
-
+  /* examples */
+  
   tryCatch(() => 1, () => 'error')) // ${JSON.stringify(
     E.tryCatch(
       () => 1,
@@ -155,11 +176,13 @@ export const EitherContainer: React.FC = () => {
   // if the value is a \`Left\` the inner value is applied to the first function,
   // if the value is a \`Right\` the inner value is applied to the second function.
 
-  import { pipe } from 'fp-ts/lib/pipeable'
-
   function fold<E, A, B>(onLeft: (e: E) => B, onRight: (a: A) => B): (ma: Either<E, A>) => B {
     return ma => (isLeft(ma) ? onLeft(ma.left) : onRight(ma.right))
   }
+  
+  /* examples */
+  
+  import { pipe } from 'fp-ts/lib/pipeable'
   
   const onLeft = (errors: Array<string>): string => \`Errors: \${errors.join(', ')}\`
   const onRight = (errors: Array<string>): string => \`Ok: \${value}\`
@@ -177,13 +200,16 @@ export const EitherContainer: React.FC = () => {
 
   // getShow
   const getShowTx = `
-  import { showString } from 'fp-ts/lib/Show'
 
   function getShow<E, A>(SE: Show<E>, SA: Show<A>): Show<Either<E, A>> {
     return {
       show: ma => (isLeft(ma) ? \`left(\${SE.show(ma.left)})\` : \`right(\${SA.show(ma.right)})\`)
     }
   }
+  
+  /* examples */
+  
+  import { showString } from 'fp-ts/lib/Show'
   
   const S = getShow(showString, showString)
   
@@ -204,6 +230,10 @@ export const EitherContainer: React.FC = () => {
     }
   }
   
+  /* examples */
+
+  import { eqNumber, eqString } from 'fp-ts/lib/Eq'
+
   const equals = getEq(eqString, eqNumber).equals
   
   equals(right(1), right(1)) // ${equals(E.right(1), E.right(1))}
@@ -222,14 +252,16 @@ export const EitherContainer: React.FC = () => {
   // If both operands are \`Right\`s then the inner values are
   // appended using the provided \`Semigroup\`
   
-  import { semigroupSum } from 'fp-ts/lib/Semigroup'
-
   function getSemigroup<E, A>(S: Semigroup<A>): Semigroup<Either<E, A>> {
     return {
       concat: (x, y) => (isLeft(y) ? x : isLeft(x) ? y : right(S.concat(x.right, y.right)))
     }
   }
   
+  /* examples */
+
+  import { semigroupSum } from 'fp-ts/lib/Semigroup'
+
   const semigroup = getSemigroup<string, number>(semigroupSum)
   
   semigroup.concat(left('a'), left('b')) // ${JSON.stringify(semigroup.concat(E.left('a'), E.left('b')))}
@@ -244,13 +276,15 @@ export const EitherContainer: React.FC = () => {
   const getApplySemigroupTx = `
   // \`Apply\` semigroup
   
-  import { semigroupSum } from 'fp-ts/lib/Semigroup'
-
   function getApplySemigroup<E, A>(S: Semigroup<A>): Semigroup<Either<E, A>> {
     return {
       concat: (x, y) => (isLeft(x) ? x : isLeft(y) ? y : right(S.concat(x.right, y.right)))
     }
   }
+  
+  /* examples */
+  
+  import { semigroupSum } from 'fp-ts/lib/Semigroup'
   
   const applySemigroup = getApplySemigroup<string, number>(semigroupSum)
   
@@ -264,14 +298,16 @@ export const EitherContainer: React.FC = () => {
   const applyMonoid = E.getApplyMonoid(monoidSum)
 
   const getApplyMonoidTx = `
-  import { monoidSum } from 'fp-ts/lib/Monoid'
-
   function getApplyMonoid<E, A>(M: Monoid<A>): Monoid<Either<E, A>> {
     return {
       ...getApplySemigroup(M),
       empty: right(M.empty)
     }
   }
+  
+  /* examples */
+  
+  import { monoidSum } from 'fp-ts/lib/Monoid'
   
   const applyMonoid = getApplyMonoid(monoidSum)
   
@@ -292,23 +328,28 @@ export const EitherContainer: React.FC = () => {
 
   // swap
   const swapTx = `
-  import { monoidSum } from 'fp-ts/lib/Monoid'
 
   function swap<E, A>(ma: Either<E, A>): Either<A, E> {
     return isLeft(ma) ? right(ma.left) : left(ma.right)
   }
   
-  swap(_.right('a')) // ${JSON.stringify(E.swap(E.right('a')))}
-  swap(_.left('b')) // ${JSON.stringify(E.swap(E.left('b')))}
+  /* examples */
+  
+  import { monoidSum } from 'fp-ts/lib/Monoid'
+  
+  swap(right('a')) // ${JSON.stringify(E.swap(E.right('a')))}
+  swap(left('b')) // ${JSON.stringify(E.swap(E.left('b')))}
   `
 
   // orElse
   const orElseTx = `
-  import { pipe } from 'fp-ts/lib/pipeable'
-
   function orElse<E, A, M>(onLeft: (e: E) => Either<M, A>): (ma: Either<E, A>) => Either<M, A> {
     return ma => (isLeft(ma) ? onLeft(ma.left) : ma)
   }
+  
+  /* examples */
+  
+  import { pipe } from 'fp-ts/lib/pipeable'
   
   pipe(
     right(1),
@@ -349,12 +390,15 @@ export const EitherContainer: React.FC = () => {
 
   // getOrElse
   const getOrElseTx = `
-  import { pipe } from 'fp-ts/lib/pipeable'
 
   function getOrElse<E, A>(onLeft: (e: E) => A): (ma: Either<E, A>) => A {
     return ma => (isLeft(ma) ? onLeft(ma.left) : ma.right)
   }
   
+  /* examples */ 
+  
+  import { pipe } from 'fp-ts/lib/pipeable'
+
   pipe(
     right(12),
     getOrElse(() => 17)
@@ -385,11 +429,13 @@ export const EitherContainer: React.FC = () => {
 
   // elem
   const elemTx = `
-  import { eqNumber } from 'fp-ts/lib/Eq'
-
   function elem<A>(E: Eq<A>): <E>(a: A, ma: Either<E, A>) => boolean {
     return (a, ma) => (isLeft(ma) ? false : E.equals(a, ma.right))
   }
+  
+  /* examples */ 
+  
+  import { eqNumber } from 'fp-ts/lib/Eq'
   
   elem(eqNumber)(2, left('a')) // ${E.elem(eqNumber)(2, E.left('a'))}
   elem(eqNumber)(2, right(2)) // ${E.elem(eqNumber)(2, E.right(2))}
@@ -407,6 +453,8 @@ export const EitherContainer: React.FC = () => {
     return ma => (isLeft(ma) ? false : predicate(ma.right))
   }
   
+  /* examples */ 
+  
   const greaterThan2 = exists((n: number) => n > 2)
  
   greaterThan2(left('a')) // ${greaterThan2(E.left('a'))}
@@ -422,6 +470,7 @@ export const EitherContainer: React.FC = () => {
     return tryCatch(() => JSON.parse(s), onError)
   }
   
+  /* examples */
   
   parseJSON('{"a":1}', toError) // ${JSON.stringify(E.parseJSON('{"a":1}', E.toError))}
   parseJSON('{"a":}', toError) // ${JSON.stringify(E.parseJSON('{"a":}', E.toError))}
@@ -434,11 +483,13 @@ export const EitherContainer: React.FC = () => {
   const stringifyJSONTx = `
   // Converts a JavaScript value to a JavaScript Object Notation (JSON) string.
 
-  import { pipe } from 'fp-ts/lib/pipeable'
-
   function stringifyJSON<E>(u: unknown, onError: (reason: unknown) => E): Either<E, string> {
     return tryCatch(() => JSON.stringify(u), onError)
   }
+  
+  /* examples */
+  
+  import { pipe } from 'fp-ts/lib/pipeable'
   
   const circular: any = { ref: null }
   circular.ref = circular
@@ -468,8 +519,6 @@ export const EitherContainer: React.FC = () => {
 
   const getWitherableTx = `
   // Builds \`Witherable\` instance for \`Either\` given \`Monoid\` for the left side
-
-  import { monoidString } from 'fp-ts/lib/Monoid'
 
   function getWitherable<E>(M: Monoid<E>): Witherable2C<URI, E> {
     const empty = left(M.empty)
@@ -553,7 +602,9 @@ export const EitherContainer: React.FC = () => {
     }
   }
   
-  /* example */
+  /* examples */
+  
+  import { monoidString } from 'fp-ts/lib/Monoid'
   
   const witherable = getWitherable(monoidString)
 
@@ -756,8 +807,6 @@ export const EitherContainer: React.FC = () => {
   const validationSemigroup = E.getValidationMonoid(monoidString, monoidSum)
 
   const getValidationSemigroupTx = `
-  import { monoidSum, monoidString } from 'fp-ts/lib/Monoid'
-
   function getValidationSemigroup<E, A>(SE: Semigroup<E>, SA: Semigroup<A>): Semigroup<Either<E, A>> {
     return {
       concat: (fx, fy) =>
@@ -770,6 +819,10 @@ export const EitherContainer: React.FC = () => {
           : right(SA.concat(fx.right, fy.right))
     }
   }
+  
+  /* examples */
+  
+  import { monoidSum, monoidString } from 'fp-ts/lib/Monoid'
   
   const validationSemigroup = getValidationSemigroup(monoidString, monoidSum)
 
@@ -790,14 +843,16 @@ export const EitherContainer: React.FC = () => {
   const validationMonoid = E.getValidationMonoid(monoidString, monoidSum)
 
   const getValidationMonoidTx = `
-  import { monoidSum, monoidString } from 'fp-ts/lib/Monoid'
-
   function getValidationMonoid<E, A>(SE: Semigroup<E>, SA: Monoid<A>): Monoid<Either<E, A>> {
     return {
       concat: getValidationSemigroup(SE, SA).concat,
       empty: right(SA.empty)
     }
   }
+  
+  /* examples */
+  
+  import { monoidSum, monoidString } from 'fp-ts/lib/Monoid'
   
   const validationMonoid = getValidationMonoid(monoidString, monoidSum)
   
