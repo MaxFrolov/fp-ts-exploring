@@ -15,6 +15,15 @@ import { showString, showNumber, showBoolean } from 'fp-ts/lib/Show'
 export const OptionContainer: React.FC = () => {
   // common types
   const commonTypesTX = `
+  declare module './HKT' {
+    interface URItoKind<A> {
+      Option: Option<A>
+    }
+  }
+
+  const URI = 'Option'
+  type URI = typeof URI
+
   interface None {
     readonly _tag: 'None'
   }
@@ -33,6 +42,8 @@ export const OptionContainer: React.FC = () => {
     return { _tag: 'Some', value: a }
   }
   
+  /* examples */
+  
   some(5) // ${JSON.stringify(O.some<number>(5))}
   some('string_value') // ${JSON.stringify(O.some<string>('string_value'))}
   some({ key: 5 }}) // ${JSON.stringify(
@@ -49,6 +60,8 @@ export const OptionContainer: React.FC = () => {
     return fa._tag === 'Some'
   }
   
+  /* examples */
+
   isSome(some(5)) // ${O.isSome(O.some<number>(5))}
   isSome(none) // ${O.isSome(O.none)}
   `
@@ -61,6 +74,8 @@ export const OptionContainer: React.FC = () => {
   function isNone<A>(fa: Option<A>): fa is None {
     return fa._tag === 'None'
   }
+  
+  /* examples */
   
   isNone(some(5)) // ${O.isNone(O.some<number>(5))}
   isNone(none) // ${O.isNone(O.none)}
@@ -80,13 +95,13 @@ export const OptionContainer: React.FC = () => {
     return ma => (isNone(ma) ? onNone() : onSome(ma.value))
   }
   
+  /* examples */
+  
   const onNone = () => 'none'
   const onSome = (s: string) => \`some\${s.length}\`
   
-  const fold = O.fold(onNone, onSome)
-  
-  fold(O.none) // ${O.fold(onNone, onSome)(O.none)}
-  fold(O.some('abc'))) // ${O.fold(onNone, onSome)(O.some('abc'))}
+  fold(onNone, onSome)(none) // ${O.fold(onNone, onSome)(O.none)}
+  fold(onNone, onSome)(some('abc'))) // ${O.fold(onNone, onSome)(O.some('abc'))}
   `
 
   // fromNullable
@@ -98,6 +113,8 @@ export const OptionContainer: React.FC = () => {
   function fromNullable<A>(a: A): Option<NonNullable<A>> {
     return a == null ? none : some(a as NonNullable<A>)
   }
+  
+  /* examples */
   
   fromNullable(1) // ${JSON.stringify(O.fromNullable(O.some(1)))}
   fromNullable(null) // ${JSON.stringify(O.fromNullable(null))}
@@ -113,6 +130,8 @@ export const OptionContainer: React.FC = () => {
     return isNone(ma) ? null : ma.value
   }
   
+  /* examples */
+  
   toNullable(some(1)) // ${O.toNullable(O.some(1))}  
   toNullable(none) // ${O.toNullable(O.none)}
   `
@@ -126,19 +145,24 @@ export const OptionContainer: React.FC = () => {
     return isNone(ma) ? undefined : ma.value
   }
   
+  /* examples */
+  
   toUndefined(some(1)) // ${O.toUndefined(O.some(1))}  
   toUndefined(none) // ${O.toUndefined(O.none)}
   `
+
 
   // getOrElse
   const getOrElseTx = `
   // Extracts the value out of the structure, if it exists.
   // Otherwise returns the given default value
 
-  function function getOrElse<A>(onNone: () => A): (ma: Option<A>) => A {
+  function getOrElse<A>(onNone: () => A): (ma: Option<A>) => A {
     return ma => (isNone(ma) ? onNone() : ma.value)
   }
-  
+
+  /* examples */
+
   getOrElse(() => 0)(some(100)) // ${O.getOrElse(() => 0)(O.some(100))}
   getOrElse(() => 0)(none) // ${O.getOrElse(() => 0)(O.none)}
   `
@@ -147,11 +171,13 @@ export const OptionContainer: React.FC = () => {
   const elemTx = `
   // Returns \`true\` if \`ma\` contains \`a\`
   
-  import { eqNumber } from 'fp-ts/lib/Eq'
-
-  function function elem<A>(E: Eq<A>): (a: A, ma: Option<A>) => boolean {
+  function elem<A>(E: Eq<A>): (a: A, ma: Option<A>) => boolean {
     return (a, ma) => (isNone(ma) ? false : E.equals(a, ma.value))
   }
+  
+  /* examples */
+  
+  import { eqNumber } from 'fp-ts/lib/Eq'
   
   elem(eqNumber)(1, some(1)) // ${O.elem(eqNumber)(1, O.some(1))}
   elem(eqNumber)(2, some(1)) // ${O.elem(eqNumber)(2, O.some(1))}
@@ -162,9 +188,11 @@ export const OptionContainer: React.FC = () => {
   const existsTx = `
   // Returns \`true\` if the predicate is satisfied by the wrapped value
   
-  function function exists<A>(predicate: Predicate<A>): (ma: Option<A>) => boolean {
+  function exists<A>(predicate: Predicate<A>): (ma: Option<A>) => boolean {
     return ma => (isNone(ma) ? false : predicate(ma.value))
   }
+  
+  /* examples */
   
   exists(n => n > 0)(some(1)) // ${O.exists(n => n > 0)(O.some(1))}
   exists(n => n > 1)(some(1)) // ${O.exists(n => n > 1)(O.some(1))}
@@ -178,10 +206,12 @@ export const OptionContainer: React.FC = () => {
   // Returns a smart constructor based on the given predicate
   
   function fromPredicate<A, B extends A>(refinement: Refinement<A, B>): (a: A) => Option<B>
-  function fromPredicate<A>(predicate: Predicate<A>): (a: A) => Option<A>
-  function fromPredicate<A>(predicate: Predicate<A>): (a: A) => Option<A> {
+           fromPredicate<A>(predicate: Predicate<A>): (a: A) => Option<A>
+           fromPredicate<A>(predicate: Predicate<A>): (a: A) => Option<A> {
     return a => (predicate(a) ? some(a) : none)
   }
+  
+  /* examples */
   
   const predicate = (n: number) => n >= 0
   
@@ -203,6 +233,8 @@ export const OptionContainer: React.FC = () => {
     }
   }
   
+  /* examples */
+  
   tryCatch(() => 1) // ${JSON.stringify(O.tryCatch(() => 1))}
   tryCatch(() => { throw new Error() }) // ${JSON.stringify(
     O.tryCatch(() => {
@@ -219,8 +251,10 @@ export const OptionContainer: React.FC = () => {
     return ma._tag === 'Right' ? none : some(ma.left)
   }
   
-  O.getLeft( E.right(1) ) // ${JSON.stringify(O.getLeft(E.right(1)))} 
-  O.getLeft( E.left('error') ) // ${JSON.stringify(O.getLeft(E.left('error')))}
+  /* examples */
+  
+  getLeft( E.right(1) ) // ${JSON.stringify(O.getLeft(E.right(1)))} 
+  getLeft( E.left('error') ) // ${JSON.stringify(O.getLeft(E.left('error')))}
   `
 
   // getRight
@@ -231,8 +265,10 @@ export const OptionContainer: React.FC = () => {
     return ma._tag === 'Left' ? none : some(ma.right)
   }
   
-  O.getRight( E.right(1) ) // ${JSON.stringify(O.getRight(E.right(1)))} 
-  O.getRight( E.left('error') ) // ${JSON.stringify(O.getRight(E.left('error')))}
+  /* examples */
+  
+  getRight( E.right(1) ) // ${JSON.stringify(O.getRight(E.right(1)))} 
+  getRight( E.left('error') ) // ${JSON.stringify(O.getRight(E.left('error')))}
   `
 
   // getRefinement
@@ -243,23 +279,25 @@ export const OptionContainer: React.FC = () => {
   // Returns a \`Refinement\` (i.e. a custom type guard) from a \`Option\` returning function.
   // This function ensures that a custom type guard definition is type-safe.
   
-  getRefinement<A, B extends A>(getOption: (a: A) => Option<B>): Refinement<A, B> {
+  function getRefinement<A, B extends A>(getOption: (a: A) => Option<B>): Refinement<A, B> {
     return (a: A): a is B => isSome(getOption(a))
   }
   
-  // example 1
-  const isStringOption = (s: any): O.Option<string> => (typeof s === 'string' ? O.some(s) : O.none)
+  /* examples: 1 */
+  
+  const isStringOption = (s: any): Option<string> => (typeof s === 'string' ? some(s) : none)
   
   getRefinement(isStringOption)(1) // ${O.getRefinement(isStringOption)(1)}
   getRefinement(isStringOption)('s') // ${O.getRefinement(isStringOption)('s')}
   
   
-  // example 2
+  /* examples: 2 */
+
   type A = { type: 'A' }
   type B = { type: 'B' }
   type C = A | B
   
-  const isAOption = O.getRefinement<C, A>(c => (c.type === 'A' ? O.some(c) : O.none))
+  const isAOption = getRefinement<C, A>(c => (c.type === 'A' ? some(c) : none))
   
   getRefinement(isAOption)({ type: 'A' }) // ${O.getRefinement(isAOption)({ type: 'A' })}
   getRefinement(isAOption)({ type: 'B' }) // ${O.getRefinement(isAOption)({ type: 'B' })}
@@ -282,12 +320,15 @@ export const OptionContainer: React.FC = () => {
   const mapNullableTx = `
   // This is \`chain\` + \`fromNullable\`, useful when working with optional values
   
-  import { pipe } from 'fp-ts/lib/pipeable'
   
   function mapNullable<A, B>(f: (a: A) => B | null | undefined): (ma: Option<A>) => Option<B> {
     return ma => (isNone(ma) ? none : fromNullable(f(ma.value)))
   }
   
+  /* examples */
+  
+  import { pipe } from 'fp-ts/lib/pipeable'
+
   interface Employee {
     company?: {
       address?: {
@@ -331,33 +372,37 @@ export const OptionContainer: React.FC = () => {
 
   // getShow
   const getShowTx = `
-  import { showString, showNumber, showBoolean } from 'fp-ts/lib/Show'
-
   function getShow<A>(S: Show<A>): Show<Option<A>> {
     return {
       show: ma => (isNone(ma) ? 'none' : \`some(\${S.show(ma.value)})\`)
     }
   }
   
-  O.getShow(showString).show(O.some('a')) // ${O.getShow(showString).show(O.some('a'))}
-  O.getShow(showString).show(O.none) // ${O.getShow(showString).show(O.none)}
+  /* examples */
   
-  O.getShow(showNumber).show(O.some(1)) // ${O.getShow(showNumber).show(O.some(1))}
-  O.getShow(showNumber).show(O.none) // ${O.getShow(showNumber).show(O.none)}
+  import { showString, showNumber, showBoolean } from 'fp-ts/lib/Show'
   
-  O.getShow(showBoolean).show(O.some(1)) // ${O.getShow(showBoolean).show(O.some(false))}
-  O.getShow(showBoolean).show(O.none) // ${O.getShow(showBoolean).show(O.none)}
+  getShow(showString).show(some('a')) // ${O.getShow(showString).show(O.some('a'))}
+  getShow(showString).show(none) // ${O.getShow(showString).show(O.none)}
+  
+  getShow(showNumber).show(some(1)) // ${O.getShow(showNumber).show(O.some(1))}
+  getShow(showNumber).show(none) // ${O.getShow(showNumber).show(O.none)}
+  
+  getShow(showBoolean).show(some(1)) // ${O.getShow(showBoolean).show(O.some(false))}
+  getShow(showBoolean).show(none) // ${O.getShow(showBoolean).show(O.none)}
   `
 
   // getEq
   const getEqTx = `
-  import { eqNumber } from 'fp-ts/lib/Eq'
-
   function getEq<A>(E: Eq<A>): Eq<Option<A>> {
     return {
       equals: (x, y) => x === y || (isNone(x) ? isNone(y) : isNone(y) ? false : E.equals(x.value, y.value))
     }
   }
+  
+  /* examples */
+  
+  import { eqNumber } from 'fp-ts/lib/Eq'
   
   getEq(eqNumber).equals(none, none) // ${O.getEq(eqNumber).equals(O.none, O.none)}
   getEq(eqNumber).equals(none, some(1)) // ${O.getEq(eqNumber).equals(O.none, O.some(1))}
@@ -374,14 +419,16 @@ export const OptionContainer: React.FC = () => {
   
   // \`None\` is considered to be less than any \`Some\` value.
 
-  import { ordNumber } from 'fp-ts/lib/Ord'
-
   function getOrd<A>(O: Ord<A>): Ord<Option<A>> {
     return {
       equals: getEq(O).equals,
       compare: (x, y) => (x === y ? 0 : isSome(x) ? (isSome(y) ? O.compare(x.value, y.value) : 1) : -1)
     }
   }
+  
+  /* examples */
+  
+  import { ordNumber } from 'fp-ts/lib/Ord'
   
   getOrd(ordNumber).compare(none, none) // ${O.getOrd(ordNumber).compare(O.none, O.none)}
   getOrd(ordNumber).compare(none, some(1)) // ${O.getOrd(ordNumber).compare(O.none, O.some(1))}
@@ -392,22 +439,24 @@ export const OptionContainer: React.FC = () => {
 
   // getApplySemigroup
   const getApplySemigroupTx = `
-  \`Apply\` semigroup
- 
-  | x       | y       | concat(x, y)       |
-  | ------- | ------- | ------------------ |
-  | none    | none    | none               |
-  | some(a) | none    | none               |
-  | none    | some(a) | none               |
-  | some(a) | some(b) | some(concat(a, b)) |
-
-  import { semigroupSum } from 'fp-ts/lib/Semigroup'
+  // \`Apply\` semigroup
+  //
+  // | x       | y       | concat(x, y)       |
+  // | ------- | ------- | ------------------ |
+  // | none    | none    | none               |
+  // | some(a) | none    | none               |
+  // | none    | some(a) | none               |
+  // | some(a) | some(b) | some(concat(a, b)) |
 
   function getApplySemigroup<A>(S: Semigroup<A>): Semigroup<Option<A>> {
     return {
       concat: (x, y) => (isSome(x) && isSome(y) ? some(S.concat(x.value, y.value)) : none)
     }
   }
+  
+  /* examples */
+  
+  import { semigroupSum } from 'fp-ts/lib/Semigroup'
   
   getApplySemigroup(semigroupSum).concat(none, none) // ${JSON.stringify(
     O.getApplySemigroup(semigroupSum).concat(O.none, O.none)
@@ -430,8 +479,6 @@ export const OptionContainer: React.FC = () => {
   const applyMonoid = O.getApplyMonoid(monoidSum)
 
   const getApplyMonoidTx = `
-  import { monoidSum } from 'fp-ts/lib/Monoid'
-
   function getApplyMonoid<A>(M: Monoid<A>): Monoid<Option<A>> {
     return {
       ...getApplySemigroup(M),
@@ -439,17 +486,21 @@ export const OptionContainer: React.FC = () => {
     }
   }
   
-  const applyMonoid = O.getApplyMonoid(monoidSum)
+  /* examples */
   
-  applyMonoid.concat(applyMonoid.empty, O.none) // ${JSON.stringify(applyMonoid.concat(applyMonoid.empty, O.none))}
-  applyMonoid.concat(O.none, applyMonoid.empty) // ${JSON.stringify(applyMonoid.concat(O.none, applyMonoid.empty))}
-  applyMonoid.concat(applyMonoid.empty, O.some(1)) // ${JSON.stringify(
+  import { monoidSum } from 'fp-ts/lib/Monoid'
+
+  const applyMonoid = getApplyMonoid(monoidSum)
+  
+  applyMonoid.concat(applyMonoid.empty, none) // ${JSON.stringify(applyMonoid.concat(applyMonoid.empty, O.none))}
+  applyMonoid.concat(none, applyMonoid.empty) // ${JSON.stringify(applyMonoid.concat(O.none, applyMonoid.empty))}
+  applyMonoid.concat(applyMonoid.empty, some(1)) // ${JSON.stringify(
     applyMonoid.concat(applyMonoid.empty, O.some(1))
   )}
-  applyMonoid.concat(O.some(1), applyMonoid.empty) // ${JSON.stringify(
+  applyMonoid.concat(some(1), applyMonoid.empty) // ${JSON.stringify(
     applyMonoid.concat(O.some(1), applyMonoid.empty)
   )}
-  applyMonoid.concat(O.some(1), some(1)) // ${JSON.stringify(applyMonoid.concat(O.some(1), O.some(1)))}
+  applyMonoid.concat(some(1), some(1)) // ${JSON.stringify(applyMonoid.concat(O.some(1), O.some(1)))}
   `
 
   // getFirstMonoid
@@ -471,6 +522,8 @@ export const OptionContainer: React.FC = () => {
       empty: none
     }
   }
+  
+  /* examples */
   
   const M = getFirstMonoid<number>()
   
@@ -501,6 +554,8 @@ export const OptionContainer: React.FC = () => {
     }
   }
   
+  /* examples */
+  
   const M = getLastMonoid<number>()
   
   M.concat(none, none) // ${JSON.stringify(lastMonoid.concat(O.none, O.none))}
@@ -525,8 +580,6 @@ export const OptionContainer: React.FC = () => {
   // | none    | some(a) | some(a)            |
   // | some(a) | some(b) | some(concat(a, b)) |
 
-  import { semigroupSum } from 'fp-ts/lib/Semigroup'
-
   function getMonoid<A>(S: Semigroup<A>): Monoid<Option<A>> {
     return {
       concat: (x, y) => (isNone(x) ? y : isNone(y) ? x : some(S.concat(x.value, y.value))),
@@ -534,6 +587,10 @@ export const OptionContainer: React.FC = () => {
     }
   }
   
+  /* examples */
+  
+  import { semigroupSum } from 'fp-ts/lib/Semigroup'
+
   const M = getMonoid(semigroupSum)
   
   M.concat(none, none) // ${JSON.stringify(monoid.concat(O.none, O.none))}

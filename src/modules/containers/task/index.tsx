@@ -3,23 +3,32 @@ import * as React from 'react'
 import { ModuleContainer, Title } from '@md-views'
 import { CodeBlock } from '@md-components/code-block'
 // libs
-import * as T from 'fp-ts/lib/Task'
-import { pipe } from 'fp-ts/lib/pipeable'
-import { monoidString } from 'fp-ts/lib/Monoid'
-import { semigroupSum } from 'fp-ts/lib/Semigroup'
-import { race } from 'q'
-
-function resolvedPromise<T>(value: T, delay: number): () => Promise<T> {
-  return () => new Promise<T>(resolve => setTimeout(() => resolve(value), delay))
-}
-
-function rejectedPromise<T>(value: any, delay: number): () => Promise<T> {
-  return () => new Promise<T>((_, reject) => setTimeout(() => reject(value), delay))
-}
+// import * as T from 'fp-ts/lib/Task'
+// import { pipe } from 'fp-ts/lib/pipeable'
+// import { monoidString } from 'fp-ts/lib/Monoid'
+// import { semigroupSum } from 'fp-ts/lib/Semigroup'
+// import { race } from 'q'
+//
+// function resolvedPromise<T>(value: T, delay: number): () => Promise<T> {
+//   return () => new Promise<T>(resolve => setTimeout(() => resolve(value), delay))
+// }
+//
+// function rejectedPromise<T>(value: any, delay: number): () => Promise<T> {
+//   return () => new Promise<T>((_, reject) => setTimeout(() => reject(value), delay))
+// }
 
 export const TaskContainer: React.FC = () => {
   // common types
   const commonTypesTX = `
+  declare module './HKT' {
+    interface URItoKind<A> {
+      Task: Task<A>
+    }
+  }
+  
+  export const URI = 'Task'
+  export type URI = typeof URI
+
   interface Task<A> {
     (): Promise<A>
   }
@@ -28,6 +37,8 @@ export const TaskContainer: React.FC = () => {
   // common constants
   const commonConstantsTx = `
   const never: Task<never> = () => new Promise(_ => undefined)
+  
+  // custom functions to reuse in examples
   
   function resolvedPromise<T>(value: T, delay: number): () => Promise<T> {
     return () => new Promise<T>(resolve => setTimeout(() => resolve(value), delay))
@@ -54,8 +65,11 @@ export const TaskContainer: React.FC = () => {
 
   const semigroup = getSemigroup<number>(semigroupSum)
   
-  semigroup.concat(resolvedPromise(1, 10), resolvedPromise(1, 10)) // Promise resolve -> 2
-  semigroup.concat(resolvedPromise(1, 10), rejectedPromise('Error', 10)) // Promise reject -> "Error"
+  semigroup.concat(resolvedPromise(1, 10), resolvedPromise(1, 10))
+  // Promise resolve -> 2
+  
+  semigroup.concat(resolvedPromise(1, 10), rejectedPromise('Error', 10))
+  // Promise reject -> "Error"
   `
 
   // getMonoid
@@ -80,11 +94,20 @@ export const TaskContainer: React.FC = () => {
 
   const monoid = getMonoid<string>(monoidString)
   
-  monoid.concat(resolvedPromise('a', 10), resolvedPromise('a', 10)) // Promise resolve -> 'aa'
-  monoid.concat(monoid.empty, resolvedPromise('a', 10)) // Promise resolve -> 'a'
-  monoid.concat(resolvedPromise('a', 10), monoid.empty) // Promise resolve -> 'a'
-  monoid.concat(monoid.empty, monoid.empty) // Promise resolve -> ''
-  monoid.concat(resolvedPromise('a', 10), rejectedPromise('Error', 10)) // Promise reject -> 'Error'
+  monoid.concat(resolvedPromise('a', 10), resolvedPromise('a', 10))
+  // Promise resolve -> 'aa'
+  
+  monoid.concat(monoid.empty, resolvedPromise('a', 10))
+  // Promise resolve -> 'a'
+  
+  monoid.concat(resolvedPromise('a', 10), monoid.empty)
+  // Promise resolve -> 'a'
+  
+  monoid.concat(monoid.empty, monoid.empty)
+  // Promise resolve -> ''
+  
+  monoid.concat(resolvedPromise('a', 10), rejectedPromise('Error', 10))
+  // Promise reject -> 'Error'
   `
 
   // getRaceMonoid
@@ -109,13 +132,26 @@ export const TaskContainer: React.FC = () => {
   
   const monoid = getRaceMonoid()
   
-  monoid.concat(resolvedPromise(1, 10), resolvedPromise(2, 10)) // Promise resolve -> 1
-  monoid.concat(resolvedPromise(1, 50), resolvedPromise(2, 10)) // Promise resolve -> 2
-  monoid.concat(resolvedPromise(1, 10), monoid.empty) // Promise resolve -> 1
-  monoid.concat(monoid.empty, resolvedPromise(2, 10)) // Promise resolve -> 2
-  monoid.concat(monoid.empty, monoid.empty) // the promise will never be resolved
-  monoid.concat(resolvedPromise(1, 10), rejectedPromise('Error', 50)) // Promise resolve -> 1  
-  monoid.concat(resolvedPromise(1, 50), rejectedPromise('Error', 10)) // Promise reject -> 'Error'  
+  monoid.concat(resolvedPromise(1, 10), resolvedPromise(2, 10))
+  // Promise resolve -> 1
+  
+  monoid.concat(resolvedPromise(1, 50), resolvedPromise(2, 10))
+  // Promise resolve -> 2
+  
+  monoid.concat(resolvedPromise(1, 10), monoid.empty)
+  // Promise resolve -> 1
+  
+  monoid.concat(monoid.empty, resolvedPromise(2, 10))
+  // Promise resolve -> 2
+  
+  monoid.concat(monoid.empty, monoid.empty)
+  // the promise will never be resolved
+  
+  monoid.concat(resolvedPromise(1, 10), rejectedPromise('Error', 50))
+  // Promise resolve -> 1  
+  
+  monoid.concat(resolvedPromise(1, 50), rejectedPromise('Error', 10))
+  // Promise reject -> 'Error'  
   `
 
   // delay
