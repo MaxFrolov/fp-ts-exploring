@@ -3,19 +3,28 @@ import * as React from 'react'
 import { ModuleContainer, Title } from '@md-views'
 import { CodeBlock } from '@md-components/code-block'
 // libs
-import * as T from 'fp-ts/lib/Task'
-import * as E from 'fp-ts/lib/Either'
-import * as TE from 'fp-ts/lib/TaskEither'
-import { getMonoid } from 'fp-ts/lib/Array'
-import { ioEither } from 'fp-ts/lib/IOEither'
-import { pipe, pipeable } from 'fp-ts/lib/pipeable'
-import { monoidString } from 'fp-ts/lib/Monoid'
-import { semigroupSum, semigroupString } from 'fp-ts/lib/Semigroup'
-import { getFilterableComposition } from 'fp-ts/lib/Filterable'
+// import * as T from 'fp-ts/lib/Task'
+// import * as E from 'fp-ts/lib/Either'
+// import * as TE from 'fp-ts/lib/TaskEither'
+// import { getMonoid } from 'fp-ts/lib/Array'
+// import { ioEither } from 'fp-ts/lib/IOEither'
+// import { pipe, pipeable } from 'fp-ts/lib/pipeable'
+// import { monoidString } from 'fp-ts/lib/Monoid'
+// import { semigroupSum, semigroupString } from 'fp-ts/lib/Semigroup'
+// import { getFilterableComposition } from 'fp-ts/lib/Filterable'
 
 export const TaskEitherContainer: React.FC = () => {
   // common types
   const commonTypesTX = `
+  declare module './HKT' {
+    interface URItoKind2<E, A> {
+      TaskEither: TaskEither<E, A>
+    }
+  }
+  
+  export const URI = 'TaskEither'
+  export type URI = typeof URI
+  
   interface TaskEither<E, A> extends Task<Either<E, A>> {}
   `
 
@@ -250,7 +259,7 @@ export const TaskEitherContainer: React.FC = () => {
   tryCatch(
     () => Promise.reject(undefined),
     () => 'Error'
-  )() // // Promise resolve -> {_tag: "Left", left: "Error"}
+  )() // Promise resolve -> {_tag: "Left", left: "Error"}
   `
 
   // bracket
@@ -576,7 +585,8 @@ export const TaskEitherContainer: React.FC = () => {
  
   /* examples */
  
-  TE.fromIOEitherK(() => () => E.right(1))()() // Promise resolve -> {_tag: "Right", right:1}
+  TE.fromIOEitherK(() => () => E.right(1))()()
+  // Promise resolve -> {_tag: "Right", right:1}
   `
 
   // chainIOEitherK
