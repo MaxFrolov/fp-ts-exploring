@@ -35,6 +35,7 @@ const links = [
   { name: 'TaskEither', id: '#taskEither' },
   { name: 'Eq', id: '#eq' },
   { name: 'Ord', id: '#ord' },
+  { name: 'Semigroup', id: '#semigroup' }
 ]
 
 const SideBar = () => {

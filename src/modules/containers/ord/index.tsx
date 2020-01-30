@@ -7,7 +7,6 @@ import { ModuleContainer, Title } from '@md-views'
 import * as Ord from 'fp-ts/lib/Ord'
 import * as Mo from 'fp-ts/lib/Monoid'
 import * as Arr from 'fp-ts/lib/Array'
-import { monoidOrdering } from 'fp-ts/lib/Ordering'
 
 const OrdContainer = () => {
   // common types
@@ -246,9 +245,18 @@ const OrdContainer = () => {
   
   const O = getTupleOrd(ordString, ordNumber, ordBoolean)
   
-  O.compare(['a', 1, true], ['b', 2, true]) // ${Ord.getTupleOrd(Ord.ordString, Ord.ordNumber, Ord.ordBoolean).compare(['a', 1, true], ['b', 2, true])}
-  O.compare(['a', 1, true], ['a', 2, true]) // ${Ord.getTupleOrd(Ord.ordString, Ord.ordNumber, Ord.ordBoolean).compare(['a', 1, true], ['a', 2, true])}
-  O.compare(['a', 1, true], ['a', 1, false]) // ${Ord.getTupleOrd(Ord.ordString, Ord.ordNumber, Ord.ordBoolean).compare(['a', 1, true], ['a', 1, false])}
+  O.compare(['a', 1, true], ['b', 2, true]) // ${Ord.getTupleOrd(Ord.ordString, Ord.ordNumber, Ord.ordBoolean).compare(
+    ['a', 1, true],
+    ['b', 2, true]
+  )}
+  O.compare(['a', 1, true], ['a', 2, true]) // ${Ord.getTupleOrd(Ord.ordString, Ord.ordNumber, Ord.ordBoolean).compare(
+    ['a', 1, true],
+    ['a', 2, true]
+  )}
+  O.compare(['a', 1, true], ['a', 1, false]) // ${Ord.getTupleOrd(Ord.ordString, Ord.ordNumber, Ord.ordBoolean).compare(
+    ['a', 1, true],
+    ['a', 1, false]
+  )}
   `
 
   // getDualOrd
