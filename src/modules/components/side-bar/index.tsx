@@ -33,7 +33,8 @@ const links = [
   { name: 'Array', id: '#array' },
   { name: 'Task', id: '#task' },
   { name: 'TaskEither', id: '#taskEither' },
-  { name: 'Eq', id: '#eq' }
+  { name: 'Eq', id: '#eq' },
+  { name: 'Ord', id: '#ord' },
 ]
 
 const SideBar = () => {

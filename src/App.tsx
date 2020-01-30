@@ -9,6 +9,7 @@ import { ArrayContainer } from '@md-containers/array'
 import { TaskContainer } from '@md-containers/task'
 import { TaskEitherContainer } from '@md-containers/taskEither'
 import { EqContainer } from '@md-containers/eq'
+import { OrdContainer } from '@md-containers/ord'
 // components
 import { SideBar } from '@md-components/side-bar'
 
@@ -39,6 +40,7 @@ const App = () => (
       <TaskContainer />
       <TaskEitherContainer />
       <EqContainer />
+      <OrdContainer />
     </ContentContainer>
   </div>
 )
