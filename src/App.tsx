@@ -11,6 +11,7 @@ import { TaskEitherContainer } from '@md-containers/taskEither'
 import { EqContainer } from '@md-containers/eq'
 import { OrdContainer } from '@md-containers/ord'
 import { SemigroupContainer } from '@md-containers/semigroup'
+import { ValidationContainer } from '@md-containers/validation'
 // components
 import { SideBar } from '@md-components/side-bar'
 
@@ -43,6 +44,7 @@ const App = () => (
       <EqContainer />
       <OrdContainer />
       <SemigroupContainer />
+      <ValidationContainer />
     </ContentContainer>
   </div>
 )
