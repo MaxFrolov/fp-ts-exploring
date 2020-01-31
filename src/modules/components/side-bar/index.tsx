@@ -37,7 +37,8 @@ const links = [
   { name: 'Ord', id: '#ord' },
   { name: 'Semigroup', id: '#semigroup' },
   { name: 'Validation', id: '#validation' },
-  { name: 'Functor', id: '#functor' }
+  { name: 'Functor', id: '#functor' },
+  { name: 'Monad', id: '#monad' }
 ]
 
 const SideBar = () => {

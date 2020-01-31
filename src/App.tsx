@@ -13,6 +13,7 @@ import { OrdContainer } from '@md-containers/ord'
 import { SemigroupContainer } from '@md-containers/semigroup'
 import { ValidationContainer } from '@md-containers/validation'
 import { FunctorContainer } from '@md-containers/functor'
+import { MonadContainer } from '@md-containers/monad'
 // components
 import { SideBar } from '@md-components/side-bar'
 
@@ -47,6 +48,7 @@ const App = () => (
       <SemigroupContainer />
       <ValidationContainer />
       <FunctorContainer />
+      <MonadContainer />
     </ContentContainer>
   </div>
 )
