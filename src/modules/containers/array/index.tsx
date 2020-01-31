@@ -213,7 +213,7 @@ const ArrayContainer = () => {
   `
 
   // foldLeft
-  const foldLeftLenEx = A.foldLeft<number, number>(
+  const foldLeftLenEx: (n: number[]) => number = A.foldLeft<number, number>(
     () => 0,
     (_, tail) => 1 + foldLeftLenEx(tail)
   )
@@ -252,7 +252,7 @@ const ArrayContainer = () => {
   `
 
   // foldRight
-  const foldRightLenEx = A.foldRight<number, number>(
+  const foldRightLenEx: (n: number[]) => number = A.foldRight<number, number>(
     () => 0,
     nums => 1 + foldRightLenEx(nums)
   )
@@ -1096,9 +1096,9 @@ const ArrayContainer = () => {
   `
 
   // chop
-  const group = S => {
+  const group = (S: Eq.Eq<number>): ((as: Array<number>) => Array<Array<number>>) => {
     return A.chop(as => {
-      const { init, rest } = A.spanLeft(a => S.equals(a, as[0]))(as)
+      const { init, rest } = A.spanLeft<number>(a => S.equals(a, as[0]))(as)
       return [init, rest]
     })
   }

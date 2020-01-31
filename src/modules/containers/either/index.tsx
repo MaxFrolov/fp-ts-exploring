@@ -789,7 +789,7 @@ export const EitherContainer: React.FC = () => {
   // ${JSON.stringify(validation.ap(E.left<string, (n: number) => number>('foo'), E.right(1)))}
 
   validation.ap(left('foo'), left('bar'))
-  // ${JSON.stringify(validation.ap(E.left('foo'), E.right('bar')))}
+  // ${JSON.stringify(validation.ap(E.left<string>('foo'), E.right('bar')))}
   
   /* examples: .alt */
 

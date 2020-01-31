@@ -38,7 +38,8 @@ const links = [
   { name: 'Semigroup', id: '#semigroup' },
   { name: 'Validation', id: '#validation' },
   { name: 'Functor', id: '#functor' },
-  { name: 'Monad', id: '#monad' }
+  { name: 'Monad', id: '#monad' },
+  { name: 'Monoid', id: '#monoid' },
 ]
 
 const SideBar = () => {
@@ -64,7 +65,7 @@ const SideBar = () => {
     }
   }, [])
 
-  const isLinkActive = (id) => activeLink === id
+  const isLinkActive = (id: string) => activeLink === id
 
   return (
     <SidebarContainer>

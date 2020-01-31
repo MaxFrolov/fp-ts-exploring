@@ -14,6 +14,7 @@ import { SemigroupContainer } from '@md-containers/semigroup'
 import { ValidationContainer } from '@md-containers/validation'
 import { FunctorContainer } from '@md-containers/functor'
 import { MonadContainer } from '@md-containers/monad'
+import { MonoidContainer } from '@md-containers/monoid'
 // components
 import { SideBar } from '@md-components/side-bar'
 
@@ -49,6 +50,7 @@ const App = () => (
       <ValidationContainer />
       <FunctorContainer />
       <MonadContainer />
+      <MonoidContainer />
     </ContentContainer>
   </div>
 )

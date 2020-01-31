@@ -194,9 +194,9 @@ export const OptionContainer: React.FC = () => {
   
   /* examples */
   
-  exists(n => n > 0)(some(1)) // ${O.exists(n => n > 0)(O.some(1))}
-  exists(n => n > 1)(some(1)) // ${O.exists(n => n > 1)(O.some(1))}
-  exists(n => n > 0)(none) // ${O.exists(n => n > 0)(O.none)}
+  exists(n => n > 0)(some(1)) // ${O.exists<number>(n => n > 0)(O.some(1))}
+  exists(n => n > 1)(some(1)) // ${O.exists<number>(n => n > 1)(O.some(1))}
+  exists(n => n > 0)(none) // ${O.exists<number>(n => n > 0)(O.none)}
   `
 
   // fromPredicate

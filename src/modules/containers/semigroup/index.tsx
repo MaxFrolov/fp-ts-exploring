@@ -123,7 +123,8 @@ const SemigroupContainer = () => {
   `
 
   // getStructSemigroup
-  const G1 = S.getStructSemigroup([S.semigroupSum, S.semigroupString])
+
+  const G1 = S.getStructSemigroup<[number, string]>([S.semigroupSum, S.semigroupString])
 
   const getStructSemigroupTx = `
   function getStructSemigroup<O extends { [key: string]: any }>(
