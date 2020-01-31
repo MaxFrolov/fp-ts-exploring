@@ -40,6 +40,7 @@ const links = [
   { name: 'Functor', id: '#functor' },
   { name: 'Monad', id: '#monad' },
   { name: 'Monoid', id: '#monoid' },
+  { name: 'Foldable', id: '#foldable' }
 ]
 
 const SideBar = () => {
