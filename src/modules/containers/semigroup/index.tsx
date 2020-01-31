@@ -220,9 +220,64 @@ const SemigroupContainer = () => {
     concat: (x, y) => x && y
   }
   
-  semigroupAll(!!1, !!0) // ${JSON.stringify(S.semigroupAll.concat(!!1, !!0))}
-  semigroupAll(!!0, !!1) // ${JSON.stringify(S.semigroupAll.concat(!!0, !!1))}
-  semigroupAll(!!1, !!1) // ${JSON.stringify(S.semigroupAll.concat(!!1, !!1))}
+  semigroupAll.concat(!!1, !!0) // ${JSON.stringify(S.semigroupAll.concat(!!1, !!0))}
+  semigroupAll.concat(!!0, !!1) // ${JSON.stringify(S.semigroupAll.concat(!!0, !!1))}
+  semigroupAll.concat(!!1, !!1) // ${JSON.stringify(S.semigroupAll.concat(!!1, !!1))}
+  `
+
+  // semigroupAny
+  const semigroupAnyTX = `
+  // Boolean semigroup under disjunction
+  
+  const semigroupAny: Semigroup<boolean> = {
+    concat: (x, y) => x || y
+  }
+  
+  semigroupAny.concat(!!1, !!0) // ${JSON.stringify(S.semigroupAny.concat(!!1, !!0))}
+  semigroupAny.concat(!!0, !!1) // ${JSON.stringify(S.semigroupAny.concat(!!0, !!1))}
+  semigroupAny.concat(!!1, !!1) // ${JSON.stringify(S.semigroupAny.concat(!!1, !!1))}
+  `
+
+  // semigroupSum
+  const semigroupSumTx = `
+  // Number \`Semigroup\` under addition
+  
+  const semigroupSum: Semigroup<number> = {
+    concat: (x, y) => x + y
+  }
+  
+  semigroupSum.concat(2, 3) // ${JSON.stringify(S.semigroupSum.concat(2, 3))}
+  semigroupSum.concat(0, 5) // ${JSON.stringify(S.semigroupSum.concat(0, 5))}
+  `
+
+  // semigroupProduct
+  const semigroupProductTx = `
+  // Number \`Semigroup\` under multiplication
+  
+  const semigroupProduct: Semigroup<number> = {
+    concat: (x, y) => x * y
+  }
+  
+  semigroupProduct.concat(2, 3) // ${JSON.stringify(S.semigroupProduct.concat(2, 3))}
+  semigroupProduct.concat(0, 5) // ${JSON.stringify(S.semigroupProduct.concat(0, 5))}
+  `
+
+  // semigroupString
+  const semigroupStringTx = `
+  const semigroupString: Semigroup<string> = {
+    concat: (x, y) => x + y
+  }
+  
+  semigroupString.concat('hello', 'world') // ${JSON.stringify(S.semigroupString.concat('hello', 'world'))}
+  semigroupString.concat('0', '5') // ${JSON.stringify(S.semigroupString.concat('0', '5'))}
+  `
+
+  const semigroupVoidTx = `
+  const semigroupVoid: Semigroup<void> = {
+    concat: () => undefined
+  }
+  
+  semigroupVoid.concat() // ${JSON.stringify(S.semigroupVoid.concat())}
   `
 
   return (
@@ -240,6 +295,11 @@ const SemigroupContainer = () => {
       <CodeBlock label='getJoinSemigroup' codeTx={getJoinSemigroupTx} />
       <CodeBlock label='getObjectSemigroup' codeTx={getObjectSemigroupTx} />
       <CodeBlock label='semigroupAll' codeTx={semigroupAllTx} />
+      <CodeBlock label='semigroupAny' codeTx={semigroupAnyTX} />
+      <CodeBlock label='semigroupSum' codeTx={semigroupSumTx} />
+      <CodeBlock label='semigroupProduct' codeTx={semigroupProductTx} />
+      <CodeBlock label='semigroupString' codeTx={semigroupStringTx} />
+      <CodeBlock label='semigroupVoid' codeTx={semigroupVoidTx} />
     </ModuleContainer>
   )
 }
