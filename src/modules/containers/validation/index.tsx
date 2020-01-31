@@ -5,7 +5,7 @@ import { CodeBlock } from '@md-components/code-block'
 import { ModuleContainer, Title } from '@md-views'
 // libs
 import * as E from 'fp-ts/lib/Either'
-import * as TE from 'fp-ts/lib/TaskEither'
+// import * as TE from 'fp-ts/lib/TaskEither'
 
 import { monoidString } from 'fp-ts/lib/Monoid'
 

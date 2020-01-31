@@ -36,7 +36,8 @@ const links = [
   { name: 'Eq', id: '#eq' },
   { name: 'Ord', id: '#ord' },
   { name: 'Semigroup', id: '#semigroup' },
-  { name: 'Validation', id: '#validation' }
+  { name: 'Validation', id: '#validation' },
+  { name: 'Functor', id: '#functor' }
 ]
 
 const SideBar = () => {
