@@ -18,6 +18,7 @@ import { MonoidContainer } from '@md-containers/monoid'
 import { TraversableContainer } from '@md-containers/traversable'
 import { FoldableContainer } from '@md-containers/foldable'
 import { ApplyContainer } from '@md-containers/apply'
+import { ReaderContainer } from '@md-containers/reader'
 // components
 import { SideBar } from '@md-components/side-bar'
 
@@ -57,6 +58,7 @@ const App = () => (
       <FoldableContainer />
       <TraversableContainer />
       <ApplyContainer />
+      <ReaderContainer />
     </ContentContainer>
   </div>
 )

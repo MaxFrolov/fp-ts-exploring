@@ -42,7 +42,8 @@ const links = [
   { name: 'Monoid', id: '#monoid' },
   { name: 'Foldable', id: '#foldable' },
   { name: 'Traversable', id: '#traversable' },
-  { name: 'Apply', id: '#apply' }
+  { name: 'Apply', id: '#apply' },
+  { name: 'Reader', id: '#reader' }
 ]
 
 const SideBar = () => {
