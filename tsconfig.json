@@ -17,6 +17,9 @@
     "paths": {
       "@md-components/*": ["./src/modules/components/*"],
       "@md-containers/*": ["./src/modules/containers/*"],
+      "@md-layouts/*": ["./src/modules/layouts/*"],
+      "@md-pages/*": ["./src/modules/pages/*"],
+      "@md-assets/*": ["./src/assets/assets/*"],
       "@md-views": ["./src/modules/views"]
     }
   },

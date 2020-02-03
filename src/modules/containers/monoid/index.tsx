@@ -214,9 +214,8 @@ const MonoidContainer = () => {
   
   const G1 = M.getStructMonoid([M.monoidSum, M.monoidString])
   
-  G1.concat([M.monoidSum.empty, M.monoidString.empty], [4, 'Michael']) // ${G1.concat(
-    [M.monoidSum.empty, M.monoidString.empty],
-    [4, 'Michael']
+  G1.concat([M.monoidSum.empty, M.monoidString.empty], [4, 'Michael']) // ${JSON.stringify(
+    G1.concat([M.monoidSum.empty, M.monoidString.empty], [4, 'Michael'])
   )}
   `
 

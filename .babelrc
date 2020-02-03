@@ -8,6 +8,9 @@
         "alias": {
           "@md-components": "./src/modules/components",
           "@md-containers": "./src/modules/containers",
+          "@md-pages": "./src/modules/pages",
+          "@md-layouts": "./src/modules/layouts",
+          "@md-assets": "./src/modules/assets",
           "@md-views": "./src/modules/views"
         }
       }
