@@ -7,6 +7,29 @@ import { ModuleContainer, Title } from '@md-views'
 import * as FN from 'fp-ts/lib/function'
 
 const FunctionContainer = () => {
+  // common types
+  const commonTypesTx = `
+  interface Lazy<A> {
+    (): A
+  }
+  
+  interface Predicate<A> {
+    (a: A): boolean
+  }
+  
+  interface Refinement<A, B extends A> {
+    (a: A): a is B
+  }
+  
+  interface Endomorphism<A> {
+    (a: A): A
+  }
+  
+  interface FunctionN<A extends Array<unknown>, B> {
+    (...args: A): B
+  }
+  `
+
   // identity
   const identityTx = `
   function identity<A>(a: A): A {
@@ -172,6 +195,7 @@ const FunctionContainer = () => {
   return (
     <ModuleContainer id='function'>
       <Title>FP-TS (function)</Title>
+      <CodeBlock label='common types' codeTx={commonTypesTx} />
       <CodeBlock label='identity' codeTx={identityTx} />
       <CodeBlock label='unsafeCoerce' codeTx={unsafeCoerceTx} />
       <CodeBlock label='no' codeTx={notTx} />

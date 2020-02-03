@@ -16,35 +16,23 @@ import * as M from 'fp-ts/lib/Monoid'
 const ArrayContainer = () => {
   // common types
   const commonTypesTX = `
+  declare module './HKT' {
+    interface URItoKind<A> {
+      Array: Array<A>
+    }
+  }
+
   type URI = typeof URI
-  const URI: "Array" = ...
   
   interface Show<A> {
    show: (a: A) => string
   }
   `
 
-  // getShow
-  const G = A.getShow<string>(S.showString)
-
-  const getShowTx = `
-  import { showString } from 'fp-ts/lib/Show'
-  
-  function getShow<A>(S: Show<A>): Show<Array<A>> {
-  return {
-    show: as => \`[\${as.map(S.show).join(', ')}]\`
-   }
-  }
-  
-  getShow<string>(showString)(['hello', 'world']) // '${G.show(['hello', 'world'])}' -> <string>
-  getShow<string>(showString)(['1', '2']) // '${G.show(['1', '2'])}' -> <string>
-  getShow<string>(showString)([]) // '${G.show([])}' -> <string>
-  `
-
-  // getMonoid
-  const getMonoidEx = A.getMonoid<number>()
-
-  const getMonoidTx = `
+  // common constants
+  const commonConstantsTx = `
+  const URI: "Array" = ...
+    
   const concat = <A>(x: Array<A>, y: Array<A>): Array<A> => {
     const lenx = x.length
     
@@ -72,7 +60,29 @@ const ArrayContainer = () => {
   }
   
   const empty: Array<never> = []
+  `
 
+  // getShow
+  const G = A.getShow<string>(S.showString)
+
+  const getShowTx = `
+  import { showString } from 'fp-ts/lib/Show'
+  
+  function getShow<A>(S: Show<A>): Show<Array<A>> {
+  return {
+    show: as => \`[\${as.map(S.show).join(', ')}]\`
+   }
+  }
+  
+  getShow<string>(showString)(['hello', 'world']) // '${G.show(['hello', 'world'])}' -> <string>
+  getShow<string>(showString)(['1', '2']) // '${G.show(['1', '2'])}' -> <string>
+  getShow<string>(showString)([]) // '${G.show([])}' -> <string>
+  `
+
+  // getMonoid
+  const getMonoidEx = A.getMonoid<number>()
+
+  const getMonoidTx = `
   function getMonoid<A = never>(): Monoid<Array<A>> {
     return {
       concat,
@@ -1526,6 +1536,7 @@ const ArrayContainer = () => {
     <ModuleContainer id='array'>
       <Title>FP-TS (Array)</Title>
       <CodeBlock label='common types' codeTx={commonTypesTX} />
+      <CodeBlock label='common constants' codeTx={commonConstantsTx} />
       <CodeBlock label='getShow' codeTx={getShowTx} />
       <CodeBlock label='getMonoid' codeTx={getMonoidTx} />
       <CodeBlock label='getEq' codeTx={getEqTx} />
