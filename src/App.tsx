@@ -23,7 +23,7 @@ import { ReaderContainer } from '@md-containers/reader'
 import { SideBar } from '@md-components/side-bar'
 
 const ContentContainer = styled.div`
-  padding: 1px 30px 20px calc(115px + 8vmin);
+  padding: 1px 30px 20px 165px;
   background-color: #282c34;
   min-height: 100vh;
   font-size: calc(10px + 2vmin);

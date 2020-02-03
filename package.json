@@ -39,6 +39,7 @@
     "jest-environment-jsdom-fourteen": "0.1.0",
     "jest-resolve": "24.9.0",
     "jest-watch-typeahead": "0.4.2",
+    "lodash": "^4.17.15",
     "mini-css-extract-plugin": "0.8.0",
     "optimize-css-assets-webpack-plugin": "5.0.3",
     "pnp-webpack-plugin": "1.5.0",
@@ -139,6 +140,7 @@
   "devDependencies": {
     "@babel/plugin-proposal-export-default-from": "^7.8.3",
     "@babel/plugin-proposal-optional-chaining": "^7.8.3",
+    "@types/lodash": "^4.14.149",
     "@types/styled-components": "^4.4.2",
     "babel-plugin-inline-react-svg": "^1.1.1",
     "babel-plugin-module-resolver": "^4.0.0",
