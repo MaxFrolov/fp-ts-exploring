@@ -17,6 +17,7 @@ import { MonadContainer } from '@md-containers/monad'
 import { MonoidContainer } from '@md-containers/monoid'
 import { TraversableContainer } from '@md-containers/traversable'
 import { FoldableContainer } from '@md-containers/foldable'
+import { ApplyContainer } from '@md-containers/apply'
 // components
 import { SideBar } from '@md-components/side-bar'
 
@@ -55,6 +56,7 @@ const App = () => (
       <MonoidContainer />
       <FoldableContainer />
       <TraversableContainer />
+      <ApplyContainer />
     </ContentContainer>
   </div>
 )
