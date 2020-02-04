@@ -93,6 +93,9 @@ const SideBar = () => {
       <SidebarLinkC to='/diagrams'>
         Diagrams
       </SidebarLinkC>
+      <SidebarLinkC to='/training'>
+        Training
+      </SidebarLinkC>
       <SidebarSubTitle>Modules</SidebarSubTitle>
       {links.map(({ name, id }) => (
         <SidebarLinkH to={`/${id}`} onClick={setActiveLinkHash(id)} key={id} isActive={isLinkActive(id)}>

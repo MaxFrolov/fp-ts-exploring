@@ -4,7 +4,7 @@ import styled from 'styled-components'
 // view components
 import { MainLayout } from '@md-layouts/main'
 // views
-import { Title } from '@md-views'
+import { Title, ModuleContainer } from '@md-views'
 // assets
 import { ReactComponent as TypeClasses } from '@md-assets/svg/type-classes.svg'
 import TypeClassesP1 from '@md-assets/png/fp-ts-1.png'
@@ -22,10 +22,6 @@ const DiagramContainer = styled.div`
 const DiagramImg = styled.img`
   object-fit: contain;
   display: inline-block;
-`
-
-const ModuleContainer = styled.div`
-  padding-top: 20px;
 `
 
 const DiagramsPage = () => {
