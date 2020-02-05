@@ -1,32 +1,72 @@
-import * as React from 'react'
-import { Kind2, URIS2 } from 'fp-ts/lib/HKT'
-import { MonadThrow2 } from 'fp-ts/lib/MonadThrow'
-import { pipe, pipeable } from 'fp-ts/lib/pipeable'
-import { URI as uriEither, either, left, right } from 'fp-ts/lib/Either'
+// libs
+import { Do } from 'fp-ts-contrib/lib/Do'
+import { pipe } from 'fp-ts/lib/pipeable'
+import * as TE from 'fp-ts/lib/TaskEither'
+import * as Ei from 'fp-ts/lib/Either'
 
-const ProgramExample = () => {
-  interface Calc<F extends URIS2> {
-    sum: (a: number, b: number) => Kind2<F, Error, number>
-    div: (a: number, b: number) => Kind2<F, Error, number>
-  }
-
-  type Program<F extends URIS2> = MonadThrow2<F> & Calc<F>
-
-  const program = <F extends URIS2>(F: Program<F>, P = pipeable(F)) =>
-    pipe(
-      F.sum(10, 10),
-      P.chain((tw) => F.div(tw, 0))
-    )
-
-  const calcEither: Program<uriEither> = {
-    ...either,
-    div: (a, b) => (b === 0 ? left(new Error("div by zero")) : right(a / b)),
-    sum: (a, b) => right(a + b)
-  }
-
-  const main = program(calcEither)
-
-  return <div>hello</div>
+interface ICreatePostVariables {
+  title: string
+  body: string
+  userId: number
 }
 
-export { ProgramExample }
+interface IApiClient {
+  createPost<T>(variables: ICreatePostVariables): Promise<T>
+  getPlanets<T>(page?: number): Promise<T>
+}
+
+export const initAPIClient = (): IApiClient => {
+  // helpers
+  const TCReq: <T>(p: Promise<T>, er?: unknown) => TE.TaskEither<Error, T> = (t, er = 'Network error') =>
+    TE.tryCatch(
+      () => t,
+      () => Ei.toError(er)
+    )
+
+  async function makeTask<E, T>(task: TE.TaskEither<E, T>) {
+    const result = await task()
+
+    if (Ei.isLeft(result)) {
+      throw new Error(JSON.stringify(result.left))
+    }
+
+    return result.right
+  }
+
+  function makeRequest<T>(request: Promise<Response>): TE.TaskEither<Error, T> {
+    return Do(TE.taskEither)
+      .bindL('reqJSON', () => TCReq(request))
+      .bindL('reqData', ({ reqJSON }) => TCReq<T>(reqJSON.json()))
+      .return(({ reqData }) => reqData)
+  }
+
+  function resolveRequest<T>(request: Promise<Response>) {
+    return pipe(request, v => makeRequest<T>(v), makeTask)
+  }
+
+  // req
+  const getPlanetsReq = async (page: number = 1): Promise<Response> => fetch(`https://swapi.co/api/planets/${page}/`)
+  const createPostReq = async (data: ICreatePostVariables): Promise<Response> =>
+    fetch(`https://jsonplaceholder.typicode.com/posts`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-type': 'application/json; charset=UTF-8'
+      }
+    })
+
+  // req handlers impl
+
+  function getPlanets<T>(page?: number) {
+    return resolveRequest<T>(getPlanetsReq(page))
+  }
+
+  function createPost<T>(variables: ICreatePostVariables) {
+    return resolveRequest<T>(createPostReq(variables))
+  }
+
+  return {
+    getPlanets,
+    createPost
+  }
+}

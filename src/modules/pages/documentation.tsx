@@ -1,22 +1,23 @@
 import * as React from 'react'
 // containers
-import { FunctionContainer } from '@md-containers/function'
-import { OptionContainer } from '@md-containers/option'
-import { EitherContainer } from '@md-containers/either'
-import { ArrayContainer } from '@md-containers/array'
-import { TaskContainer } from '@md-containers/task'
-import { TaskEitherContainer } from '@md-containers/taskEither'
-import { EqContainer } from '@md-containers/eq'
-import { OrdContainer } from '@md-containers/ord'
-import { SemigroupContainer } from '@md-containers/semigroup'
-import { ValidationContainer } from '@md-containers/validation'
-import { FunctorContainer } from '@md-containers/functor'
-import { MonadContainer } from '@md-containers/monad'
-import { MonoidContainer } from '@md-containers/monoid'
-import { TraversableContainer } from '@md-containers/traversable'
-import { FoldableContainer } from '@md-containers/foldable'
-import { ApplyContainer } from '@md-containers/apply'
-import { ReaderContainer } from '@md-containers/reader'
+import { FunctionContainer } from '@md-containers/fp-ts/function'
+import { OptionContainer } from '@md-containers/fp-ts/option'
+import { EitherContainer } from '@md-containers/fp-ts/either'
+import { ArrayContainer } from '@md-containers/fp-ts/array'
+import { TaskContainer } from '@md-containers/fp-ts/task'
+import { TaskEitherContainer } from '@md-containers/fp-ts/taskEither'
+import { EqContainer } from '@md-containers/fp-ts/eq'
+import { OrdContainer } from '@md-containers/fp-ts/ord'
+import { SemigroupContainer } from '@md-containers/fp-ts/semigroup'
+import { ValidationContainer } from '@md-containers/fp-ts/validation'
+import { FunctorContainer } from '@md-containers/fp-ts/functor'
+import { MonadContainer } from '@md-containers/fp-ts/monad'
+import { MonoidContainer } from '@md-containers/fp-ts/monoid'
+import { TraversableContainer } from '@md-containers/fp-ts/traversable'
+import { FoldableContainer } from '@md-containers/fp-ts/foldable'
+import { ApplyContainer } from '@md-containers/fp-ts/apply'
+import { ReaderContainer } from '@md-containers/fp-ts/reader'
+import { DoContainer } from '@md-containers/fp-ts-contrib/do'
 // components
 import { MainLayout } from '@md-layouts/main'
 
@@ -39,6 +40,7 @@ const DocumentationPage = () => (
     <TraversableContainer />
     <ApplyContainer />
     <ReaderContainer />
+    <DoContainer />
   </MainLayout>
 )
 
