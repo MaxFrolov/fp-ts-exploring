@@ -1,8 +1,10 @@
 // libs
 import { Do } from 'fp-ts-contrib/lib/Do'
-import { pipe } from 'fp-ts/lib/pipeable'
 import * as TE from 'fp-ts/lib/TaskEither'
+import * as RTE from 'fp-ts/lib/ReaderTaskEither'
 import * as Ei from 'fp-ts/lib/Either'
+import { flow } from 'fp-ts/lib/function'
+import { pipe } from 'fp-ts/lib/pipeable'
 
 interface ICreatePostVariables {
   title: string
@@ -10,63 +12,68 @@ interface ICreatePostVariables {
   userId: number
 }
 
-interface IApiClient {
-  createPost<T>(variables: ICreatePostVariables): Promise<T>
-  getPlanets<T>(page?: number): Promise<T>
+type Decoder<T> = (u: unknown) => Ei.Either<Error, T>
+
+type ClientContext = {
+  headers: Record<string, string>
 }
 
-export const initAPIClient = (): IApiClient => {
-  // helpers
-  const TCReq: <T>(p: Promise<T>, er?: unknown) => TE.TaskEither<Error, T> = (t, er = 'Network error') =>
-    TE.tryCatch(
-      () => t,
-      () => Ei.toError(er)
+const getPlanetsReq = (page: number = 1): RTE.ReaderTaskEither<ClientContext, Error, Response> =>
+  pipe(
+    TE.tryCatch(() => fetch(`https://swapi.co/api/planets/${page}/`), Ei.toError),
+    RTE.fromTaskEither
+  )
+
+const createPostReq = (data: ICreatePostVariables) =>
+  pipe(
+    RTE.asks((r: ClientContext) => r.headers),
+    RTE.chain(headers =>
+      RTE.fromTaskEither(
+        TE.tryCatch(
+          () =>
+            fetch(`https://jsonplaceholder.typicode.com/posts`, {
+              method: 'POST',
+              body: JSON.stringify(data),
+              headers: {
+                'Content-type': 'application/json; charset=UTF-8',
+                ...headers
+              }
+            }),
+          Ei.toError
+        )
+      )
     )
+  )
 
-  async function makeTask<E, T>(task: TE.TaskEither<E, T>) {
-    const result = await task()
+function deserialize<T>(decoder: Decoder<T>) {
+  return (request: RTE.ReaderTaskEither<ClientContext, Error, Response>) =>
+    Do(RTE.readerTaskEither)
+      .bind('res', request)
+      .bindL('json', ({ res }) => RTE.fromTaskEither(TE.tryCatch(() => res.json(), Ei.toError)))
+      .bindL('asT', ({ json }) => RTE.fromTaskEither(TE.fromEither(decoder(json))))
+      .return(({ asT }) => asT)
+}
 
-    if (Ei.isLeft(result)) {
-      throw new Error(JSON.stringify(result.left))
-    }
-
-    return result.right
-  }
-
-  function makeRequest<T>(request: Promise<Response>): TE.TaskEither<Error, T> {
-    return Do(TE.taskEither)
-      .bindL('reqJSON', () => TCReq(request))
-      .bindL('reqData', ({ reqJSON }) => TCReq<T>(reqJSON.json()))
-      .return(({ reqData }) => reqData)
-  }
-
-  function resolveRequest<T>(request: Promise<Response>) {
-    return pipe(request, v => makeRequest<T>(v), makeTask)
-  }
-
-  // req
-  const getPlanetsReq = async (page: number = 1): Promise<Response> => fetch(`https://swapi.co/api/planets/${page}/`)
-  const createPostReq = async (data: ICreatePostVariables): Promise<Response> =>
-    fetch(`https://jsonplaceholder.typicode.com/posts`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-      headers: {
-        'Content-type': 'application/json; charset=UTF-8'
-      }
-    })
-
-  // req handlers impl
-
-  function getPlanets<T>(page?: number) {
-    return resolveRequest<T>(getPlanetsReq(page))
-  }
-
-  function createPost<T>(variables: ICreatePostVariables) {
-    return resolveRequest<T>(createPostReq(variables))
-  }
+function client<T>(decoder: Decoder<T>) {
+  const deserializer = deserialize(decoder)
 
   return {
-    getPlanets,
-    createPost
+    getPlanets: flow(getPlanetsReq, deserializer),
+    createPost: flow(createPostReq, deserializer)
   }
 }
+
+const trainingClient = client((u: unknown) => Ei.right((u as any) as { foo: string }))
+
+const resultRTE = trainingClient.createPost({ body: '', userId: 1, title: '' })
+
+resultRTE({ headers: {} })().then(
+  Ei.fold(
+    error => {
+      console.log(error)
+    },
+    body => {
+      console.log(body)
+    }
+  )
+)
