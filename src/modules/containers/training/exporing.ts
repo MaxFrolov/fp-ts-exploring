@@ -2,6 +2,7 @@ import * as A from 'fp-ts/lib/Array'
 import * as E from 'fp-ts/lib/Either'
 import * as O from 'fp-ts/lib/Option'
 import * as Eq from 'fp-ts/lib/Eq'
+import * as R from 'fp-ts/lib/Reader'
 import { pipe } from 'fp-ts/lib/pipeable'
 import { getUserRepositories } from '@md-containers/training/github-api'
 
@@ -126,6 +127,37 @@ const handleGetRepositories = async () => {
   console.log(reposOrError.right)
   console.log(filterByForked(reposOrError.right, true))
 }
+
+// === reader
+
+interface AddValues {
+  values: {
+    pos: string
+    neg: string
+  }
+  compValue: number
+}
+
+const values: AddValues = {
+  values: {
+    pos: 'positive',
+    neg: 'negative'
+  },
+  compValue: 2
+}
+
+const comp = (b: boolean): R.Reader<AddValues, string> => deps => (b ? deps.values.pos : deps.values.neg)
+
+const read = (n: number): R.Reader<AddValues, string> =>
+  pipe(
+    R.ask<AddValues>(),
+    R.chain(deps => comp(n > deps.compValue))
+  )
+
+const len = (s: number): R.Reader<AddValues, string> => read(s + 1)
+
+console.log(len(3)(values)) // 'positive'
+console.log(len(5)({ ...values, compValue: 6 })) // 'negative'
 
 // === types
 

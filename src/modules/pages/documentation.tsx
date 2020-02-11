@@ -17,6 +17,7 @@ import { TraversableContainer } from '@md-containers/fp-ts/traversable'
 import { FoldableContainer } from '@md-containers/fp-ts/foldable'
 import { ApplyContainer } from '@md-containers/fp-ts/apply'
 import { ReaderContainer } from '@md-containers/fp-ts/reader'
+import { RecordContainer } from '@md-containers/fp-ts/record'
 // components
 import { MainLayout } from '@md-layouts/main'
 
@@ -39,6 +40,7 @@ const DocumentationPage = () => (
     <TraversableContainer />
     <ApplyContainer />
     <ReaderContainer />
+    <RecordContainer />
   </MainLayout>
 )
 

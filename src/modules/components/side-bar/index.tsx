@@ -27,7 +27,8 @@ const elementIDs = [
   'foldable',
   'traversable',
   'apply',
-  'reader'
+  'reader',
+  'record'
 ]
 
 const links = elementIDs.map(i => ({
