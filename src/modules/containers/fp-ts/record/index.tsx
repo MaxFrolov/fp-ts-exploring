@@ -1010,10 +1010,10 @@ const RecordContainer = () => {
       <CodeBlock label='filterWithIndex' codeTx={filterWithIndexTx} />
       <CodeBlock label='fromFoldable' codeTx={fromFoldableTx} />
       <CodeBlock label='fromFoldableMap' codeTx={fromFoldableMapTx} />
-      <CodeBlock label='everyTx' codeTx={everyTx} />
-      <CodeBlock label='someTx' codeTx={someTx} />
-      <CodeBlock label='elemTx' codeTx={elemTx} />
-      <CodeBlock label='recordTx' codeTx={recordTx} />
+      <CodeBlock label='every' codeTx={everyTx} />
+      <CodeBlock label='some' codeTx={someTx} />
+      <CodeBlock label='elem' codeTx={elemTx} />
+      <CodeBlock label='record' codeTx={recordTx} />
     </ModuleContainer>
   )
 }
