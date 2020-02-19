@@ -159,6 +159,26 @@ const len = (s: number): R.Reader<AddValues, string> => read(s + 1)
 console.log(len(3)(values)) // 'positive'
 console.log(len(5)({ ...values, compValue: 6 })) // 'negative'
 
+
+// F.of(x).map(f) === F.of(f).ap(F.of(x)) law
+
+const respectLaw = pipe(
+  A.of(5),
+  A.map((v) => v + 3)
+) === pipe(
+  A.of((v: number) => v + 3),
+  A.ap(A.of(5)),
+)
+
+const tryOAp = O.option.ap(O.some((n: number) => n + 1), O.some(4))
+const tryOMap = O.option.map(O.some(4), (n: number) => n + 1)
+const tryOChain = O.option.chain(O.some(4), (n: number) => O.some(n + 1))
+const tryOTraverse = pipe(
+  O.option.traverse(E.either)(O.some(4), (n: number) => E.right(n + 1)),
+  O.fromEither,
+  O.compact
+)
+
 // === types
 
 export interface Owner {

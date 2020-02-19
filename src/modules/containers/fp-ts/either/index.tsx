@@ -895,7 +895,6 @@ export const EitherContainer: React.FC = () => {
       <CodeBlock label='swap' codeTx={swapTx} />
       <CodeBlock label='orElse' codeTx={orElseTx} />
       <CodeBlock label='getOrElse' codeTx={getOrElseTx} />
-      <CodeBlock label='getOrElse' codeTx={getOrElseTx} />
       <CodeBlock label='elem' codeTx={elemTx} />
       <CodeBlock label='exists' codeTx={existsTx} />
       <CodeBlock label='parseJSON' codeTx={parseJSONTx} />
