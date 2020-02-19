@@ -170,14 +170,14 @@ const respectLaw = pipe(
   A.ap(A.of(5)),
 )
 
-const tryOAp = O.option.ap(O.some((n: number) => n + 1), O.some(4))
-const tryOMap = O.option.map(O.some(4), (n: number) => n + 1)
-const tryOChain = O.option.chain(O.some(4), (n: number) => O.some(n + 1))
+const tryOAp = O.option.ap(O.some((n: number) => n + 1), O.some(4)) // { _tag: 'Some', value: 5 }
+const tryOMap = O.option.map(O.some(4), (n: number) => n + 1) // { _tag: 'Some', value: 5 }
+const tryOChain = O.option.chain(O.some(4), (n: number) => O.some(n + 1)) // { _tag: 'Some', value: 5 }
 const tryOTraverse = pipe(
   O.option.traverse(E.either)(O.some(4), (n: number) => E.right(n + 1)),
   O.fromEither,
   O.compact
-)
+) // { _tag: 'Some', value: 5 }
 
 // === types
 
