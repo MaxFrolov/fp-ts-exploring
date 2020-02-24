@@ -55,8 +55,16 @@ const rFM2 = Re.record.foldMap(monoidString)({ fs: 'hello', fe: 'world' }, a => 
 // ============
 // bimap
 // ============
-const eBm1 = E.either.bimap(E.right(3), (e) => e, (d) => d + 2) // { _tag: 'Right', right: 5 }
-const eBm2 = E.either.bimap(E.left(3), (e) => e, (d) => d + 2) // { _tag: 'Left', left: 3 }
+const eBm1 = E.either.bimap(
+  E.right(3),
+  e => e,
+  d => d + 2
+) // { _tag: 'Right', right: 5 }
+const eBm2 = E.either.bimap(
+  E.left(3),
+  e => e,
+  d => d + 2
+) // { _tag: 'Left', left: 3 }
 // ============
 // wilt
 // ============

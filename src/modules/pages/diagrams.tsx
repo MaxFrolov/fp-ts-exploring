@@ -7,8 +7,7 @@ import { MainLayout } from '@md-layouts/main'
 import { Title, ModuleContainer } from '@md-views'
 // assets
 import { ReactComponent as TypeClasses } from '@md-assets/svg/type-classes.svg'
-import TypeClassesP1 from '@md-assets/png/fp-ts-1.png'
-import TypeClassesP2 from '@md-assets/png/fp-ts-2.png'
+import TypeClassesP from '@md-assets/png/fp-ts.png'
 
 const DiagramContainer = styled.div`
   width: 100%;
@@ -34,15 +33,9 @@ const DiagramsPage = () => {
         </DiagramContainer>
       </ModuleContainer>
       <ModuleContainer>
-        <Title>Type Classes with Properties 1</Title>
+        <Title>Type Classes with Properties</Title>
         <DiagramContainer>
-          <DiagramImg src={TypeClassesP1} />
-        </DiagramContainer>
-      </ModuleContainer>
-      <ModuleContainer>
-        <Title>Type Classes with Properties 2</Title>
-        <DiagramContainer>
-          <DiagramImg src={TypeClassesP2} />
+          <DiagramImg src={TypeClassesP} />
         </DiagramContainer>
       </ModuleContainer>
     </MainLayout>
