@@ -231,10 +231,7 @@ const withReqConf = async () => {
 
   const getHeaders = await T.runToPromise(
     pipe(
-      configSpec.headers,
-      T.map(h => ({
-        headers: h
-      })),
+      T.accessM((r: ReqConfig) => r[reqConfigURI].headers),
       ReqConfigImpl
     )
   )

@@ -12,6 +12,7 @@ import * as I from 'io-ts'
 export interface UserId extends N.Newtype<{ readonly UserId: unique symbol }, string> {}
 export interface UserName extends N.Newtype<{ readonly UserName: unique symbol }, string> {}
 export interface UserAge extends N.Newtype<{ readonly UserAge: unique symbol }, number> {}
+export interface UserAddress extends N.Newtype<{ readonly UserAddress: unique symbol }, string[]> {}
 
 export const isoUserId = N.iso<UserId>()
 export const isoUserName = N.iso<UserName>()
@@ -26,6 +27,7 @@ export const UserId = summon(F => F.newtype<UserId>('UserId')(F.string(iotsConfi
 export const UserName = summon(F => F.newtype<UserName>('UserName')(F.string(iotsConfig(message('Invalid UserName')))))
 
 export const UserAge = summon(F => F.newtype<UserAge>('UserAge')(F.number(iotsConfig(message('Invalid UserAge')))))
+export const UserAddress = summon(F => F.newtype<UserAddress>('UserAddress')(F.array(F.string(iotsConfig(message('Invalid UserAge'))))))
 
 export const CreateUserReqVariables = summon(F =>
   F.interface(
