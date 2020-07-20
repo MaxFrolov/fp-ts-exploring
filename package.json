@@ -43,7 +43,7 @@
     "jest-environment-jsdom-fourteen": "0.1.0",
     "jest-resolve": "24.9.0",
     "jest-watch-typeahead": "0.4.2",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "mini-css-extract-plugin": "0.8.0",
     "monocle-ts": "^2.1.0",
     "newtype-ts": "^0.3.4",
